@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>韩国韵达·速邮达 | 仁川航线索引</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=20261112">
+</head>
+<body>
+
+<!-- 全局氛围层：光晕 + 网格 + 扫描线 -->
+<div class="atmo" aria-hidden="true">
+  <div class="atmo-glow"></div>
+  <div class="atmo-grid"></div>
+  <div class="atmo-scan"></div>
+</div>
+
+<header class="app-header">
+  <div class="header-inner glass">
+    <div class="logo-mark">
+      <span class="logo-box">ICN</span>
+      <div class="logo-text">
+        <h1>韩国韵达<span class="hl">·速邮达</span></h1>
+        <p class="sub">YUNDA KOREA — Incheon Route Index <em>// RG-01</em></p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="stat">
+        <span class="stat-num" id="statTotal">0</span>
+        <span class="stat-label">目的地 <em>DEST.</em></span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statPax">0</span>
+        <span class="stat-label">客运航线 <em>PAX</em></span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="statCgo">0</span>
+        <span class="stat-label">货运航线 <em>CARGO</em></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 控制面板 -->
+<section class="control-wrap">
+  <div class="control-panel glass">
+    <div class="panel-block">
+      <p class="block-label"><em>TYPE</em> 类型</p>
+      <div class="seg-group" id="typeFilter">
+        <button class="seg-btn active" data-type="all">全部<span>ALL</span></button>
+        <button class="seg-btn" data-type="pax">客运<span>PAX</span></button>
+        <button class="seg-btn" data-type="cgo">货运<span>CARGO</span></button>
+      </div>
+    </div>
+    <div class="panel-block">
+      <p class="block-label"><em>REGION</em> 区域</p>
+      <div class="seg-group" id="regionFilter">
+        <button class="seg-btn active" data-region="cn">中国<span>CN</span></button>
+        <button class="seg-btn" data-region="jp">日本<span>JP</span></button>
+        <button class="seg-btn" data-region="sea">东南亚<span>SEA</span></button>
+        <button class="seg-btn" data-region="all">全部<span>ALL</span></button>
+      </div>
+    </div>
+    <div class="panel-block grow">
+      <p class="block-label"><em>SEARCH</em> 检索</p>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="searchInput" placeholder="城市 / 机场代码 / 航空公司…" autocomplete="off">
+        <span class="search-caret" aria-hidden="true"></span>
+      </div>
+    </div>
+  </div>
+  <p class="data-meta">DATA SYNC · <em id="dataUpdated">—</em> · 数据每周自动同步仁川机场官网及公开航线资料，实际以航司发布为准</p>
+</section>
+
+<!-- 结果区 -->
+<main class="result-area">
+  <p class="result-count" id="resultCount"></p>
+  <div id="routeList"></div>
+  <div class="empty-state" id="emptyState" hidden>
+    <p class="empty-title">NO&nbsp;DATA</p>
+    <p class="empty-sub">未找到匹配航线 — 请调整筛选条件</p>
+  </div>
+</main>
+
+<!-- 城市放大面板 -->
+<div class="modal-mask" id="feeModal" hidden>
+  <div class="modal glass modal-lg">
+    <button class="modal-close" id="feeClose">✕</button>
+    <p class="modal-tag">CITY PANEL <em>// 城市航线面板</em></p>
+    <h3 class="modal-route" id="feeRouteTitle">—</h3>
+    <p class="modal-route-sub" id="feeRouteSub"></p>
+    <button class="av-link" id="feeAvLink" hidden>查看航班详情 ▸</button>
+
+    <div class="fee-section">
+      <p class="block-label"><em>CARRIER</em> 承运航班 <span class="carrier-hint">点击切换承运并重算费用</span></p>
+      <div class="airline-chips" id="carrierSelect"></div>
+    </div>
+
+    <div class="fee-section">
+      <p class="block-label"><em>PACKAGE</em> 包装类型 <span class="pkg-mode" id="pkgMode"></span></p>
+      <div class="pkg-row">
+        <div class="seg-group" id="pkgType">
+          <button class="seg-btn active" data-pkg="carton">纸箱<span>CARTON</span></button>
+          <button class="seg-btn" data-pkg="pallet" id="pkgPalletBtn">托盘<span>PALLET</span></button>
+          <button class="seg-btn" data-pkg="crate">木箱<span>WOODEN CRATE</span></button>
+        </div>
+        <div class="sched-strip" id="schedStrip">
+          <span class="ss-head">未来 7 日出发 <em>DEPARTURES</em></span>
+          <span class="ss-val" id="schedVal">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fee-section">
+      <p class="block-label"><em>INPUT</em> 货物信息</p>
+      <div class="input-grid">
+        <label class="field">
+          <span class="field-name">货值 <em>KRW</em></span>
+          <input type="number" id="inValue" min="0" placeholder="请输入货值（韩币）">
+          <span class="field-hint">用于报关费计算</span>
+        </label>
+        <label class="field">
+          <span class="field-name">实重 <em>KG</em></span>
+          <input type="number" id="inWeight" min="0" step="0.1" placeholder="如 120">
+          <span class="field-hint">计费重取实重/泡重较大者</span>
+        </label>
+        <label class="field">
+          <span class="field-name">体积 <em>CM³</em></span>
+          <input type="number" id="inVolume" min="0" placeholder="如 600000（=0.6m³）">
+          <span class="field-hint">泡重 = 体积 ÷ 6000</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="fee-section">
+      <p class="block-label"><em>RESULT</em> 费用明细</p>
+      <div class="fee-rows">
+        <div class="fee-row">
+          <div class="fee-name">报关费 <em>CUSTOMS</em></div>
+          <div class="fee-val" id="feeCustoms">—</div>
+          <div class="fee-note" id="feeCustomsNote">货值 × 0.165%，最低 ₩33,000 / 最高 ₩110,000</div>
+        </div>
+        <div class="fee-row">
+          <div class="fee-name">装机费 <em>HANDLING</em></div>
+          <div class="fee-val" id="feeHandling">—</div>
+          <div class="fee-note" id="feeHandlingNote">₩110 / kg</div>
+        </div>
+        <div class="fee-row weight-split">
+          <div class="ws-item">
+            <span class="ws-label">实重计费 <em>ACTUAL</em></span>
+            <span class="ws-val" id="wsActual">— kg</span>
+          </div>
+          <div class="ws-item">
+            <span class="ws-label">泡重计费 <em>VOLUMETRIC</em></span>
+            <span class="ws-val" id="wsVolume">— kg</span>
+          </div>
+        </div>
+        <div class="fee-row">
+          <div class="fee-name">空运费 <em>AIR FREIGHT</em></div>
+          <div class="fee-val pending" id="feeAir">待选择</div>
+          <div class="fee-note" id="feeAirNote">选择承运航司后显示对应运价</div>
+        </div>
+        <div class="fee-row addon" id="fscRow" hidden>
+          <div class="fee-name">燃油附加 <em>FSC</em></div>
+          <div class="fee-val" id="feeFsc">—</div>
+          <div class="fee-note" id="feeFscNote">—</div>
+        </div>
+        <div class="fee-row addon" id="cgcRow" hidden>
+          <div class="fee-name">地勤附加 <em>CGC</em></div>
+          <div class="fee-val" id="feeCgc">—</div>
+          <div class="fee-note" id="feeCgcNote">—</div>
+        </div>
+        <div class="fee-total">
+          <span class="ft-label">费用合计 <em id="ftNote">TOTAL</em></span>
+          <span class="ft-val" id="feeTotal">₩ 0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 航班详情界面 -->
+<section class="airline-view" id="airlineView" hidden>
+  <div class="av-header glass">
+    <button class="av-back" id="avBack">◂ 返回航线列表</button>
+    <div class="av-head-row">
+      <span class="av-code" id="avCode">—</span>
+      <div class="av-titles">
+        <h2 id="avName">—</h2>
+        <p class="av-en" id="avEn">—</p>
+      </div>
+      <div class="av-rate" id="avRate">—</div>
+    </div>
+  </div>
+  <div class="av-body">
+    <div class="av-section glass">
+      <p class="block-label"><em>NETWORK</em> 通航目的地</p>
+      <div class="av-cols">
+        <div class="av-col">
+          <p class="av-col-label">客运 <em>PAX</em></p>
+          <div class="airline-chips" id="avPax"></div>
+        </div>
+        <div class="av-col">
+          <p class="av-col-label">货运 <em>CARGO</em></p>
+          <div class="airline-chips" id="avCgo"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="app-footer">
+  <div class="foot-line" aria-hidden="true"></div>
+  <p>Incheon Air Route Index — YUNDA KOREA · 速邮达 <em>// for ops &amp; client reference</em></p>
+</footer>
+
+<script src="data.js?v=20261112"></script>
+<script src="flights-data.js?v=20261112"></script>
+<script src="app.js?v=20261112"></script>
+</body>
+</html>

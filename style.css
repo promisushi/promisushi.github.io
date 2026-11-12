@@ -1,0 +1,1145 @@
+/* ============================================================
+ * 科幻风格 UI v2 — 半透明叠层 / 斜体英文标注 / HUD 边角结构
+ * ============================================================ */
+:root {
+  --bg: #0b0e13;
+  --glass: rgba(22, 27, 36, 0.62);
+  --glass-2: rgba(30, 37, 48, 0.55);
+  --line: rgba(120, 140, 170, 0.22);
+  --line-strong: rgba(140, 165, 200, 0.4);
+  --text: #e8edf4;
+  --text-dim: #8b96a8;
+  --accent: #ffd800;
+  --accent-soft: rgba(255, 216, 0, 0.12);
+  --cargo: #4dc6ff;
+  --cargo-soft: rgba(77, 198, 255, 0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ============ 氛围层 ============ */
+.atmo { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+.atmo-glow {
+  position: absolute;
+  width: 70vw; height: 70vw;
+  top: -35vw; right: -20vw;
+  background: radial-gradient(circle, rgba(255,216,0,0.07) 0%, transparent 60%);
+}
+.atmo-glow::after {
+  content: "";
+  position: absolute;
+  width: 50vw; height: 50vw;
+  bottom: -90vw; left: -25vw;
+  background: radial-gradient(circle, rgba(77,198,255,0.06) 0%, transparent 60%);
+}
+
+.atmo-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(120,140,170,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120,140,170,0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 100%);
+}
+
+.atmo-scan {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 3px,
+    rgba(255,255,255,0.012) 3px 4px
+  );
+}
+
+/* ============ 玻璃面板通用（灰黑透明立体堆叠） ============ */
+.glass {
+  background: linear-gradient(
+    155deg,
+    rgba(42, 48, 60, 0.66) 0%,
+    rgba(26, 31, 40, 0.62) 45%,
+    rgba(13, 17, 23, 0.78) 100%
+  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    0 4px 0 -1px rgba(30, 36, 46, 0.55),
+    0 10px 0 -4px rgba(20, 25, 33, 0.45),
+    0 20px 44px rgba(0, 0, 0, 0.5);
+}
+/* HUD 角标 */
+.glass::before, .glass::after {
+  content: "";
+  position: absolute;
+  width: 14px; height: 14px;
+  pointer-events: none;
+}
+.glass::before {
+  top: -1px; left: -1px;
+  border-top: 2px solid var(--accent);
+  border-left: 2px solid var(--accent);
+}
+.glass::after {
+  bottom: -1px; right: -1px;
+  border-bottom: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
+}
+
+em {
+  font-family: "Saira", "JetBrains Mono", sans-serif;
+  font-style: italic;
+  letter-spacing: 0.06em;
+}
+
+/* ============ 头部 ============ */
+.app-header { position: relative; z-index: 2; padding: 26px 4vw 0; }
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 18px 26px;
+  flex-wrap: wrap;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+}
+
+.logo-mark { display: flex; align-items: center; gap: 16px; }
+
+.logo-box {
+  font-family: "JetBrains Mono", monospace;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: 2px;
+  color: #0b0e13;
+  background: linear-gradient(135deg, var(--accent) 0%, #ffb400 100%);
+  padding: 8px 16px;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  box-shadow: 0 0 24px rgba(255, 216, 0, 0.35);
+}
+
+.logo-text h1 { font-size: 23px; font-weight: 700; letter-spacing: 5px; line-height: 1.2; }
+.logo-text .hl { color: var(--accent); }
+.logo-text .sub {
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 2px;
+}
+.logo-text .sub em { color: var(--accent); }
+
+.header-right { display: flex; gap: 12px; }
+
+.stat {
+  min-width: 90px;
+  background: linear-gradient(160deg, rgba(38, 44, 56, 0.7), rgba(15, 19, 26, 0.75));
+  border: 1px solid var(--line);
+  padding: 9px 14px 8px;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 0 -1px rgba(30, 36, 46, 0.55),
+    0 8px 18px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.2s, transform 0.2s;
+}
+.stat:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.stat-num {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+  text-shadow: 0 0 14px rgba(255, 216, 0, 0.4);
+}
+.stat-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  margin-top: 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.stat-label em { font-size: 9px; color: #66707f; }
+
+/* ============ 控制面板 ============ */
+.control-wrap { position: relative; z-index: 2; padding: 16px 4vw 0; }
+
+.control-panel {
+  display: flex;
+  gap: 26px;
+  padding: 16px 22px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+}
+
+.panel-block.grow { flex: 1; min-width: 240px; }
+
+.block-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.block-label::before {
+  content: "//";
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 600;
+}
+.block-label em {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+
+.seg-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.seg-btn {
+  background: var(--glass-2);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 16px 5px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transform: skewX(-8deg);
+  transition: all 0.18s;
+}
+.seg-btn > * { transform: skewX(8deg); }
+.seg-btn span {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+.seg-btn:hover { border-color: var(--accent); color: var(--text); box-shadow: 0 0 12px rgba(255,216,0,0.15); }
+
+.seg-btn.active {
+  background: linear-gradient(135deg, var(--accent), #ffb400);
+  border-color: var(--accent);
+  color: #0b0e13;
+  box-shadow: 0 0 18px rgba(255, 216, 0, 0.35);
+}
+.seg-btn.active span { color: #0b0e13; opacity: 0.75; }
+
+/* 禁止样式（客运模式下的托盘）：灰色 + 斜纹 */
+.seg-btn.disabled {
+  position: relative;
+  cursor: not-allowed;
+  pointer-events: none;
+  color: #5b6675;
+  border-color: #3a414d;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.03) 0 7px,
+    rgba(255,255,255,0.08) 7px 14px
+  );
+  overflow: hidden;
+}
+.seg-btn.disabled span { color: #5b6675; }
+/* 斜纹警示层 */
+.seg-btn.disabled::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0 9px,
+    rgba(255, 90, 90, 0.14) 9px 18px
+  );
+  pointer-events: none;
+}
+
+.pkg-mode {
+  font-size: 10px;
+  color: #ff8a5c;
+  letter-spacing: 1px;
+  margin-left: 8px;
+  font-weight: 400;
+}
+
+/* 搜索框 */
+.search-wrap { position: relative; display: flex; align-items: center; }
+.search-icon {
+  position: absolute; left: 13px;
+  color: var(--accent); font-size: 17px;
+  pointer-events: none;
+  z-index: 1;
+}
+#searchInput {
+  width: 100%;
+  background: var(--glass-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 14px;
+  padding: 10px 38px;
+  outline: none;
+  transition: all 0.2s;
+}
+#searchInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(255, 216, 0, 0.18);
+}
+#searchInput::placeholder { color: #5b6675; }
+.search-caret {
+  position: absolute; right: 14px;
+  width: 2px; height: 18px;
+  background: var(--accent);
+  opacity: 0.7;
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0.1; } }
+
+.data-meta {
+  margin: 10px 2px 0;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+.data-meta em { color: var(--accent); font-size: 11px; }
+
+/* ============ 结果区 ============ */
+.result-area { position: relative; z-index: 2; padding: 22px 4vw 0; }
+
+.result-count {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-bottom: 14px;
+}
+.result-count b { color: var(--accent); font-size: 14px; }
+
+.region-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 30px 0 14px;
+}
+.region-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+.region-header .rh-en {
+  font-style: italic;
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.region-header .rh-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--line-strong), transparent);
+}
+.region-header .rh-line::before {
+  content: "▸";
+  color: var(--accent);
+  font-size: 10px;
+  position: relative;
+  top: -1px;
+  margin-right: 6px;
+}
+
+.region-header .rh-note,
+.region-note {
+  font-size: 11px;
+  color: #c98a2e;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* 二级分组标题（中国八大区 / 日本四岛） */
+.sub-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 18px 0 10px;
+  padding-left: 10px;
+  border-left: 3px solid var(--accent);
+}
+.sub-header .sh-name { font-size: 14px; font-weight: 700; letter-spacing: 3px; }
+.sub-header .sh-en {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.sub-header .sh-count {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 0 7px;
+}
+.sub-header .sh-line { flex: 1; height: 1px; background: var(--line); opacity: 0.6; }
+
+/* 航线卡片 */
+.route-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.route-card {
+  background: linear-gradient(
+    160deg,
+    rgba(38, 44, 56, 0.55) 0%,
+    rgba(24, 29, 38, 0.52) 50%,
+    rgba(12, 16, 22, 0.72) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  position: relative;
+  padding: 14px 16px 12px;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 3px 0 -1px rgba(26, 31, 40, 0.5),
+    0 12px 26px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+  overflow: hidden;
+}
+.route-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 5px 0 -1px rgba(30, 36, 46, 0.55),
+    0 18px 34px rgba(0, 0, 0, 0.55),
+    0 0 18px rgba(255, 216, 0, 0.12);
+}
+/* 卡片内左上淡光 */
+.route-card::before {
+  content: "";
+  position: absolute;
+  top: -40%; left: -20%;
+  width: 60%; height: 90%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.045), transparent 70%);
+  pointer-events: none;
+}
+.route-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.45), 0 0 18px rgba(255,216,0,0.12);
+}
+/* 卡片右上斜切三角 */
+.route-card::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0;
+  border-style: solid;
+  border-width: 0 18px 18px 0;
+  border-color: transparent var(--line-strong) transparent transparent;
+  pointer-events: none;
+}
+
+.card-badges {
+  position: absolute;
+  top: 0; right: 0;
+  display: flex;
+  z-index: 1;
+}
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 9px 3px;
+  letter-spacing: 2px;
+  color: #0b0e13;
+  transform: skewX(-8deg);
+  margin-right: 2px;
+}
+.badge.pax { background: var(--accent); box-shadow: 0 0 10px rgba(255,216,0,0.3); }
+.badge.cgo { background: var(--cargo); box-shadow: 0 0 10px rgba(77,198,255,0.3); }
+
+.route-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 2px; }
+.route-city { font-size: 17px; font-weight: 700; letter-spacing: 1px; }
+.route-code {
+  font-family: "JetBrains Mono", monospace;
+  font-style: italic;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid rgba(255, 216, 0, 0.3);
+  padding: 1px 8px;
+}
+.route-cityEn {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.airline-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  font-size: 11px;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-dim);
+  line-height: 1.6;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+.chip-group-label {
+  width: 100%;
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #5b6675;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+.chip.cargo-chip {
+  border-color: rgba(77, 198, 255, 0.35);
+  background: var(--cargo-soft);
+  color: #a5dbff;
+}
+
+/* 卡片右上类型标签（客运/货运切换） */
+.card-tabs {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+  margin: -4px -4px 8px 0;
+}
+.card-tab {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  padding: 3px 10px 2px;
+  cursor: pointer;
+  transform: skewX(-8deg);
+  transition: all 0.15s;
+}
+.card-tab:hover { border-color: var(--line-strong); color: var(--text); }
+.card-tab.active[data-mode="pax"] {
+  background: linear-gradient(135deg, var(--accent), #ffb400);
+  border-color: var(--accent);
+  color: #0b0e13;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(255, 216, 0, 0.3);
+}
+.card-tab.active[data-mode="cgo"] {
+  background: linear-gradient(135deg, var(--cargo), #2a9fd8);
+  border-color: var(--cargo);
+  color: #0b0e13;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(77, 198, 255, 0.3);
+}
+.card-tab.solo { cursor: default; }
+
+/* 航司代码芯片 */
+.chip.code-chip {
+  font-family: "JetBrains Mono", monospace;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  padding: 3px 10px;
+}
+.chip.code-chip.pax-chip {
+  color: var(--accent);
+  border-color: rgba(255, 216, 0, 0.35);
+  background: var(--accent-soft);
+}
+
+/* 亚光金属代码标签（已录入运价的航司，如 CZ）
+   画法：外层 ::before 整块哑金渐变（同斜切），内层 ::after 填充缩小 1px，
+   两层错位形成四周（含斜边）连续的金属边框 */
+.chip.code-chip.metal {
+  position: relative;
+  isolation: isolate;
+  clip-path: none;
+  border: none;
+  background: none;
+  padding: 3px 12px;
+  color: #e6c96a;
+  font-weight: 700;
+}
+.chip.code-chip.metal::before,
+.chip.code-chip.metal::after {
+  content: "";
+  position: absolute;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+.chip.code-chip.metal::before {           /* 金属层（最外） */
+  inset: 0;
+  background: linear-gradient(115deg,
+    #8f7526 0%, #b3923a 25%, #c0a044 50%,
+    #b3923a 75%, #8f7526 100%);
+  z-index: -1;
+}
+.chip.code-chip.metal::after {            /* 内填充（缩小 1px，露出金属边） */
+  inset: 1px;
+  background: linear-gradient(160deg, rgba(38, 44, 55, 0.9), rgba(15, 19, 26, 0.9));
+  z-index: -1;
+}
+
+.route-card.clickable { cursor: pointer; }
+
+/* 可选择的承运航司（城市面板内）：中文名 + 英文缩写上下结构 */
+.chip.carrier-chip {
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s, border-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 9px 16px 7px;
+  border: 1px solid var(--line);
+  background: var(--glass-2);
+}
+.cc-name { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 1px; }
+.cc-code {
+  font-family: "JetBrains Mono", monospace;
+  font-style: italic;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+}
+.chip.carrier-chip:hover { border-color: var(--cargo); }
+/* 凹陷点击感 */
+.chip.carrier-chip:active,
+.chip.carrier-chip.selected:active {
+  transform: translateY(2px) scale(0.97);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.55);
+  filter: brightness(0.85);
+}
+.chip.carrier-chip.selected {
+  background: linear-gradient(135deg, var(--accent), #ffb400);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(255, 216, 0, 0.3);
+}
+.chip.carrier-chip.selected .cc-name,
+.chip.carrier-chip.selected .cc-code { color: #0b0e13; }
+
+/* 已录入运价的航司：四边哑金金属边框（矩形无斜切，边框完整） */
+.chip.carrier-chip.metal {
+  border: 1px solid transparent;
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  background-image:
+    linear-gradient(160deg, rgba(38, 44, 55, 0.85), rgba(15, 19, 26, 0.85)),
+    linear-gradient(115deg,
+      #8f7526 0%, #b3923a 25%, #c0a044 50%,
+      #b3923a 75%, #8f7526 100%);
+}
+.chip.carrier-chip.metal .cc-code { color: #e6c96a; }
+.chip.carrier-chip.metal.selected {
+  background-image:
+    linear-gradient(135deg, var(--accent), #ffb400),
+    linear-gradient(135deg, var(--accent), #ffb400);
+}
+.chip.carrier-chip.metal.selected .cc-name,
+.chip.carrier-chip.metal.selected .cc-code { color: #0b0e13; }
+
+.carrier-hint { font-size: 10px; color: #5b6675; margin-left: 8px; letter-spacing: 1px; }
+
+/* 空状态 */
+.empty-state { text-align: center; padding: 80px 0 100px; }
+.empty-title {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: 10px;
+  color: rgba(140, 165, 200, 0.25);
+}
+.empty-sub { color: var(--text-dim); font-size: 14px; margin-top: 8px; }
+
+/* ============ 费用试算按钮 ============ */
+.calc-btn {
+  margin-top: 12px;
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(77, 198, 255, 0.4);
+  color: var(--cargo);
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  padding: 7px 12px 6px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  transition: all 0.18s;
+}
+.calc-btn em { font-size: 10px; color: rgba(77, 198, 255, 0.6); letter-spacing: 2px; }
+.calc-btn:hover {
+  background: var(--cargo-soft);
+  border-color: var(--cargo);
+  box-shadow: 0 0 14px rgba(77, 198, 255, 0.2);
+}
+
+/* ============ 费用试算弹窗 ============ */
+.modal-mask[hidden] { display: none; }
+.modal-mask {
+  position: fixed; inset: 0;
+  background: rgba(5, 7, 10, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal {
+  width: 720px;
+  max-width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: linear-gradient(
+    155deg,
+    rgba(38, 44, 56, 0.92) 0%,
+    rgba(22, 27, 36, 0.9) 50%,
+    rgba(12, 16, 22, 0.95) 100%
+  );
+  padding: 24px 26px 22px;
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  width: 30px; height: 30px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.modal-close:hover { border-color: var(--danger); color: var(--danger); }
+
+.modal-tag { font-size: 11px; letter-spacing: 2px; color: var(--accent); margin-bottom: 6px; }
+.modal-tag em { color: var(--text-dim); margin-left: 6px; }
+
+.modal-route { font-size: 20px; font-weight: 700; letter-spacing: 1px; display: flex; align-items: baseline; gap: 10px; }
+.modal-route-sub { font-size: 12px; color: var(--text-dim); margin: 4px 0 4px; }
+
+.fee-section { margin-top: 18px; }
+
+.input-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field-name { font-size: 12px; color: var(--text); display: flex; gap: 5px; align-items: baseline; }
+.field-name em { font-size: 10px; color: var(--accent); }
+.field input {
+  background: linear-gradient(160deg, rgba(30, 36, 46, 0.7), rgba(13, 17, 23, 0.8));
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: "Saira", sans-serif;
+  font-size: 14px;
+  padding: 8px 10px;
+  outline: none;
+  width: 100%;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.field input:focus { border-color: var(--accent); box-shadow: 0 0 12px rgba(255,216,0,0.15); }
+.field input::placeholder { color: #556; font-size: 12px; font-family: "Noto Sans SC", sans-serif; }
+.field-hint { font-size: 10px; color: #5b6675; }
+
+/* 弹窗内「查看航班详情」链接 */
+.av-link {
+  margin-top: 4px;
+  background: transparent;
+  border: none;
+  padding: 2px 0;
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.av-link:hover { color: var(--accent); }
+
+/* 包装类型行 + 未来 7 日出发条 */
+.pkg-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sched-strip {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 12px;
+  border: 1px solid rgba(77, 198, 255, 0.28);
+  border-left: 2px solid #4dc6ff;
+  background: linear-gradient(120deg, rgba(24, 42, 58, 0.62), rgba(13, 17, 23, 0.5));
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+.ss-head {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #6f8496;
+  white-space: nowrap;
+}
+.ss-head em {
+  font-style: italic;
+  font-family: "Saira", sans-serif;
+  font-size: 9px;
+  color: #4dc6ff;
+  margin-left: 4px;
+  opacity: 0.8;
+}
+.ss-val {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: #b9e6ff;
+  letter-spacing: 0.5px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.ss-val.daily {
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 12px rgba(255, 216, 0, 0.3);
+}
+.ss-val.none { color: #6a7482; font-style: italic; }
+
+/* 费用明细行 */.fee-rows { display: flex; flex-direction: column; gap: 8px; }
+.fee-row {
+  background: linear-gradient(160deg, rgba(34, 40, 52, 0.55), rgba(13, 17, 23, 0.65));
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "name val" "note note";
+  gap: 2px 12px;
+  align-items: baseline;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 2px 0 -1px rgba(26, 31, 40, 0.5);
+}
+.fee-name { font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+.fee-row[hidden] { display: none; }
+.fee-row.addon { border-left-color: #4dc6ff; background: linear-gradient(160deg, rgba(28, 42, 56, 0.55), rgba(13, 17, 23, 0.65)); }
+.fee-row.addon .fee-val { color: #7fd4ff; }
+.note-warn { color: #ff9a3c; }
+.fee-name em { font-size: 10px; color: var(--text-dim); margin-left: 6px; font-weight: 400; }
+.fee-val {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+  justify-self: end;
+}
+.fee-val.pending { color: #5b6675; font-size: 13px; font-style: normal; letter-spacing: 2px; }
+.fee-note { grid-area: note; font-size: 11px; color: var(--text-dim); line-height: 1.6; }
+.fee-note b { color: var(--text); font-weight: 600; }
+
+/* 实重/泡重对比 */
+.weight-split {
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: none;
+  display: flex;
+  border-left-color: var(--cargo);
+}
+.ws-item { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ws-item + .ws-item { border-left: 1px solid var(--line); padding-left: 14px; }
+.ws-label { font-size: 11px; color: var(--text-dim); }
+.ws-label em { font-size: 9px; margin-left: 4px; }
+.ws-val { font-family: "Saira", sans-serif; font-style: italic; font-size: 17px; font-weight: 600; color: var(--cargo); }
+
+/* 合计 */
+.fee-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  background: linear-gradient(90deg, rgba(255,216,0,0.1), transparent 70%);
+  border: 1px solid rgba(255,216,0,0.3);
+  padding: 12px 14px;
+  margin-top: 2px;
+}
+.ft-label { font-size: 13px; font-weight: 700; }
+.ft-label em { font-size: 10px; color: var(--text-dim); margin-left: 6px; font-weight: 400; }
+.ft-val {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--accent);
+  text-shadow: 0 0 16px rgba(255,216,0,0.35);
+}
+
+/* ============ 分区磁贴（中国八区 / 日本四岛下钻） ============ */
+.tiles-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  margin: 4px 0 14px;
+  font-style: italic;
+}
+.sub-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.sub-tile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  padding: 22px 22px 22px 18px;
+  cursor: pointer;
+  color: var(--text);
+  font-family: "Noto Sans SC", sans-serif;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 3px 0 -1px rgba(26, 31, 40, 0.5),
+    0 12px 26px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s, background 0.18s;
+}
+/* 左侧竖条：与状态色一致的分区标尺 */
+.sub-tile::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 22%;
+  bottom: 22%;
+  width: 2px;
+  background: var(--accent);
+  opacity: 0.55;
+  transition: opacity 0.18s, top 0.18s, bottom 0.18s;
+}
+.sub-tile:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  background: linear-gradient(120deg, rgba(255, 216, 0, 0.07), var(--glass) 55%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 18px 34px rgba(0, 0, 0, 0.55),
+    0 0 18px rgba(255, 216, 0, 0.12);
+}
+.sub-tile:hover::before { opacity: 1; top: 0; bottom: 0; }
+.st-idx {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  padding-top: 2px;
+  transition: color 0.18s;
+}
+.sub-tile:hover .st-idx { color: var(--accent); }
+.st-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.st-name {
+  display: block;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  line-height: 1.2;
+}
+.st-en {
+  display: block;
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.st-arrow {
+  font-size: 16px;
+  color: var(--text-dim);
+  opacity: 0.5;
+  transition: transform 0.18s, opacity 0.18s, color 0.18s;
+}
+.sub-tile:hover .st-arrow {
+  opacity: 1;
+  color: var(--accent);
+  transform: translateX(4px);
+}
+
+/* 面包屑（分区下钻后） */
+.crumb {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 0 16px;
+  flex-wrap: wrap;
+}
+.back-tiles {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.back-tiles:hover { border-color: var(--accent); color: var(--accent); }
+.crumb-path { font-size: 14px; letter-spacing: 2px; font-weight: 600; }
+.crumb-path em { color: var(--accent); font-style: italic; margin: 0 4px; }
+.crumb-count {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+
+/* ============ 航班详情界面 ============ */
+.airline-view { position: relative; z-index: 2; padding: 22px 4vw 0; }
+.av-header { padding: 20px 26px; }
+.av-back {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 16px;
+}
+.av-back:hover { border-color: var(--accent); color: var(--accent); }
+.av-head-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.av-code {
+  font-family: "JetBrains Mono", monospace;
+  font-style: italic;
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid rgba(255, 216, 0, 0.35);
+  padding: 8px 18px;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+  text-shadow: 0 0 18px rgba(255, 216, 0, 0.4);
+}
+.av-titles h2 { font-size: 24px; font-weight: 700; letter-spacing: 3px; }
+.av-en {
+  font-family: "Saira", sans-serif;
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+.av-rate {
+  margin-left: auto;
+  text-align: right;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.av-rate-ok { color: var(--accent); font-weight: 700; }
+.av-rate-none { color: #5b6675; }
+.av-rate em { font-size: 11px; color: var(--text-dim); }
+
+.av-body { margin-top: 16px; }
+.av-section { padding: 20px 26px; }
+.av-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.av-col-label { font-size: 12px; color: var(--text); letter-spacing: 2px; margin-bottom: 10px; }
+.av-col-label em { font-size: 10px; color: var(--text-dim); margin-left: 5px; }
+.av-empty { font-size: 12px; color: #5b6675; }
+
+/* ============ 页脚 ============ */
+.app-footer { position: relative; z-index: 2; padding: 48px 4vw 30px; color: #66707f; font-size: 11px; }
+.foot-line {
+  height: 1px;
+  margin-bottom: 14px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--line) 30%, transparent 100%);
+}
+.app-footer em { color: #4d5765; }
+
+/* ============ 响应式 ============ */
+@media (max-width: 720px) {
+  .app-header, .control-wrap, .result-area, .app-footer { padding-left: 5vw; padding-right: 5vw; }
+  .route-grid { grid-template-columns: 1fr; }
+  .header-right { width: 100%; justify-content: space-between; }
+  .stat { flex: 1; min-width: 0; }
+  .control-panel { gap: 16px; }
+  .input-grid { grid-template-columns: 1fr; }
+
+  /* —— 手机端可用性 —— */
+  /* 输入框 16px 起，避免 iOS 聚焦时自动放大 */
+  .field input { font-size: 16px; }
+  .modal { padding: 18px 16px 16px; max-height: 92vh; }
+  .modal-mask { padding: 0; }
+  .modal-route { font-size: 20px; }
+  /* 承运芯片可换行、加大点击区域 */
+  .airline-chips { gap: 6px; }
+  .chip.carrier-chip { padding: 7px 12px; }
+  .chip.code-chip.metal { padding: 4px 12px; }
+  /* 包装类型 + 班期条 上下堆叠 */
+  .pkg-row { flex-direction: column; }
+  .sched-strip { flex: none; width: 100%; }
+  /* 分区磁贴两列 */
+  .sub-tiles { grid-template-columns: repeat(2, 1fr); }
+  /* 航司详情页单列 */
+  .av-cols { grid-template-columns: 1fr; }
+  /* 费用行金额换行空间 */
+  .fee-row { grid-template-columns: 1fr auto; }
+  .ft-val { font-size: 20px; }
+}
