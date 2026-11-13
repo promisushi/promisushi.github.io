@@ -6,7 +6,7 @@
 
 const state = {
   type: "all",     // all | pax | cgo
-  region: "cn",    // cn | jp | sea | all
+  region: "cn",    // cn | jp | sea | am | all
   sub: null,       // 二级分区（cn/jp 下钻时使用）
   query: "",
 };
@@ -118,7 +118,7 @@ function render() {
     const items = grouped[r.id];
     if (!items || !items.length) return;
     // 日本 / 东南亚区域附加价格参考提示
-    const note = (r.id === "jp" || r.id === "sea")
+    const note = (r.id === "jp" || r.id === "sea" || r.id === "am")
       ? `<span class="region-note">（国际价格变动，仅作参考）</span>` : "";
     html += `
       <div class="region-header">
@@ -164,8 +164,10 @@ function chipsHTML(d, mode) {
   return keys.map(k => {
     const a = AIRLINES[k];
     if (!a) return "";
-    const hasRate = !!rateFor(k, d.code);
-    return `<span class="chip code-chip ${cls}${hasRate ? " metal" : ""}" title="${a.name} / ${a.en}">${a.code}</span>`;
+    const hit = rateFor(k, d.code);
+    const hasRate = !!hit;
+    const tf = hit && hit.entry.transfer ? `<sup class="tf-badge">转机</sup>` : "";
+    return `<span class="chip code-chip ${cls}${hasRate ? " metal" : ""}" title="${a.name} / ${a.en}${tf ? " · 转机" : ""}">${a.code}${tf}</span>`;
   }).join("");
 }
 
@@ -231,12 +233,19 @@ function carrierEntry(airlineKey) {
   return c[airlineKey] || c[(AIR_FREIGHT_RATES.alias || {})[airlineKey]] || null;
 }
 
-/* 指定航司 + 目的地是否有运价 */
+/* 目的地行可覆盖的航司级字段（同一航司不同航线报价不同时） */
+const ROW_OVERRIDE_KEYS = ["label", "effective", "fsc", "cgc", "allIn", "noMarkup", "transfer", "via"];
+
+/* 指定航司 + 目的地是否有运价；返回的 entry 已合并目的地行的覆盖字段 */
 function rateFor(airlineKey, destCode) {
-  const entry = carrierEntry(airlineKey);
-  if (!entry || !entry.rates) return null;
-  const table = entry.rates[destCode];
-  return table ? { entry, table } : null;
+  const base = carrierEntry(airlineKey);
+  if (!base || !base.rates) return null;
+  const table = base.rates[destCode];
+  if (!table) return null;
+  const entry = Object.assign({}, base);
+  ROW_OVERRIDE_KEYS.forEach(k => { if (table[k] !== undefined) entry[k] = table[k]; });
+  if (table.carrierNote !== undefined) entry.note = table.carrierNote;
+  return { entry, table };
 }
 
 /* 按计费重选段；原表缺失的段位向上/向下就近取用并标记 */
@@ -263,19 +272,22 @@ const WD_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /* 取某目的地 + 航司的航班（不区分客货；同航班号取班期最全的一条） */
 function flightsFor(destCode, airlineKey) {
-  if (typeof FLIGHT_DATA === "undefined" || !FLIGHT_DATA[destCode] || !airlineKey) return [];
+  if (!airlineKey) return [];
   const a = AIRLINES[airlineKey];
   if (!a) return [];
   const prefix = String(a.code).replace(/\s*Cargo$/i, "").trim();
-  const raw = FLIGHT_DATA[destCode].filter(f => f.no.startsWith(prefix));
+  const auto = (typeof FLIGHT_DATA !== "undefined" && FLIGHT_DATA[destCode]) || [];
+  const raw = auto.filter(f => f.no.startsWith(prefix));
   const cnt = x => (/daily/i.test(x.days) ? 7 : x.days.split(",").length);
   const byNo = {};
   raw.forEach(f => {
     if (!byNo[f.no] || cnt(f) > cnt(byNo[f.no])) byNo[f.no] = f;
   });
-  // 手工补充班期优先（自动源没有的航班）
+  // 手工补充班期优先（自动源没有的航班）；同号多条班期全部保留
   if (typeof MANUAL_FLIGHTS !== "undefined") {
-    (MANUAL_FLIGHTS[destCode + "|" + prefix] || []).forEach(m => { byNo[m.no] = m; });
+    const manual = MANUAL_FLIGHTS[destCode + "|" + prefix] || [];
+    manual.forEach(m => { delete byNo[m.no]; });
+    manual.forEach((m, i) => { byNo[m.no + "#" + i] = m; });
   }
   return Object.values(byNo).sort((x, y) => x.dep.localeCompare(y.dep));
 }
@@ -370,9 +382,12 @@ function openFeeModal(code, mode) {
     if (!a) return "";
     const sel = k === selectedCarrierKey ? " selected" : "";
     const metal = hasRate(k) ? " metal" : "";
+    const hit = rateFor(k, currentDest.code);
+    const tf = hit && hit.entry.transfer
+      ? `<span class="tf-badge cc-tf" title="${hit.entry.via ? "经 " + hit.entry.via + " 中转" : "非直飞，转机"}">转机</span>` : "";
     return `<button class="chip carrier-chip${sel}${metal}" data-key="${k}" data-name="${a.name}">
       <span class="cc-name">${a.name}</span>
-      <span class="cc-code">${a.code}</span>
+      <span class="cc-code">${a.code}${tf}</span>
     </button>`;
   }).join("") || `<span class="chip">暂无航线信息</span>`;
 
@@ -468,8 +483,8 @@ function calcFees() {
   const cgcEl = document.getElementById("feeCgc");
   const cgcNote = document.getElementById("feeCgcNote");
   const chargeable = Math.max(actual, volumetric);
-  const entry = carrierEntry(selectedCarrierKey);
   const hit = rateFor(selectedCarrierKey, currentDest.code);
+  const entry = hit ? hit.entry : carrierEntry(selectedCarrierKey);
   const carrierName = selectedCarrierKey && AIRLINES[selectedCarrierKey] ? AIRLINES[selectedCarrierKey].name : "—";
   let airFreight = 0, fsc = 0, cgc = 0;
 
@@ -497,8 +512,8 @@ function calcFees() {
       airEl.classList.add("pending");
       airNote.textContent = `「${carrierName}」费率表缺少可用段位 — 待补充`;
     } else {
-      /* 对外单价 = 表内费率 × 系数；已取消最低收费 */
-      const unit = pick.unit * AIR_MARKUP;
+      /* 对外单价 = 表内费率 × 系数（noMarkup 表示已是对外价）；已取消最低收费 */
+      const unit = pick.unit * (entry.noMarkup ? 1 : AIR_MARKUP);
       airFreight = chargeable * unit;
       airEl.textContent = won(airFreight);
       airEl.classList.remove("pending");
@@ -506,8 +521,10 @@ function calcFees() {
       airNote.innerHTML =
         `「${carrierName}」单价 <b>${won(unit)}/kg</b>（${SEG_LABEL[pick.seg]} 段）× 计费重 ${chargeable.toLocaleString()}kg` +
         (pick.borrowed ? ` · 原表未列该重量段，按 ${SEG_LABEL[pick.seg]} 费率计` : "") +
+        (entry.transfer ? ` · <span class="tf-badge">转机</span>${entry.via ? ` 经 ${entry.via}` : ""}` : "") +
         `<br>费率：${entry.label}（${entry.effective}）` +
         (entry.note ? ` · ${entry.note}` : "") +
+        (hit.table.note ? `<br>${hit.table.note}` : "") +
         `<br><span class="note-warn">${AIR_FREIGHT_RATES.disclaimer}</span>`;
 
       /* 燃油附加 FSC */

@@ -45,6 +45,8 @@ const AIRLINES = {
   SQ:  { name: "新加坡航空",     en: "Singapore Airlines",code: "SQ" },
   TR:  { name: "酷航",           en: "Scoot",             code: "TR" },
   QZ:  { name: "印尼鹰航联运",   en: "Indonesia AirAsia", code: "QZ" },
+  D7:  { name: "亚洲航空X",      en: "AirAsia X",         code: "D7" },
+  AM:  { name: "墨西哥航空",     en: "Aeroméxico",        code: "AM" },
   VJparata: { name: "Parata Air", en: "Parata Air",       code: "PA" },
   // —— 货运航司 ——
   CZc: { name: "中国南方航空货运", en: "China Southern Cargo", code: "CZ" },
@@ -58,7 +60,7 @@ const AIRLINES = {
   CAc: { name: "中国国际货运航空",   en: "Air China Cargo",         code: "CA Cargo" },
   CK:  { name: "中国货运航空",       en: "China Cargo Airlines",    code: "CK" },
   CF:  { name: "中国邮政航空",       en: "China Postal Airlines",   code: "CF" },
-  SF:  { name: "顺丰航空",           en: "SF Airlines",             code: "SF" },
+  SF:  { name: "顺丰航空",           en: "SF Airlines",             code: "O3" },  // IATA 二字码为 O3（2026-11-13 更正）
   BK:  { name: "奥凯航空货运",       en: "Okay Airways Cargo",      code: "BK" },
   Y8:  { name: "金鹏航空",           en: "Suparna Airlines",        code: "Y8" },
   CXc: { name: "国泰货运",           en: "Cathay Cargo",            code: "CX Cargo" },
@@ -80,6 +82,7 @@ const REGIONS = [
   { id: "cn", name: "中国",   en: "CHINA" },
   { id: "jp", name: "日本",   en: "JAPAN" },
   { id: "sea",name: "东南亚", en: "SOUTHEAST ASIA" },
+  { id: "am", name: "美洲",   en: "AMERICAS" },
 ];
 
 /* 目的地航线数据库
@@ -100,14 +103,14 @@ const DESTINATIONS = [
   { code:"HRB", city:"哈尔滨", cityEn:"Harbin",    region:"cn", pax:["OZ"], cgo:[ "CZc" ] , sub:"db" },
   { code:"YNJ", city:"延吉",   cityEn:"Yanji",     region:"cn", pax:["KE","OZ","7C"], cgo:[ "CZc" ] , sub:"db" },
   { code:"MDG", city:"牡丹江", cityEn:"Mudanjiang",region:"cn", pax:["KE","OZ"], cgo:[] , sub:"db" },
-  { code:"XIY", city:"西安",   cityEn:"Xi'an",     region:"cn", pax:["KE","OZ"], cgo:["KEc","CF"] , sub:"xb" },
+  { code:"XIY", city:"西安",   cityEn:"Xi'an",     region:"cn", pax:["KE","OZ"], cgo:["KEc","CF","CZc"] , sub:"xb" },
   { code:"CGO", city:"郑州",   cityEn:"Zhengzhou", region:"cn", pax:["KE"], cgo:["KEc","SF","5X","FX", "CZc"] , sub:"hz" },
   { code:"WUH", city:"武汉",   cityEn:"Wuhan",     region:"cn", pax:["KE"], cgo:[ "CZc" ] , sub:"hz" },
   { code:"CSX", city:"长沙",   cityEn:"Changsha",  region:"cn", pax:["KE","OZ"], cgo:["5Y", "CZc"] , sub:"hz" },
   { code:"KMG", city:"昆明",   cityEn:"Kunming",   region:"cn", pax:["KE"], cgo:[] , sub:"xn" },
   { code:"SYX", city:"三亚",   cityEn:"Sanya",     region:"cn", pax:["KE","LJ","JD"], cgo:[] , sub:"hn" },
   { code:"XMN", city:"厦门",   cityEn:"Xiamen",    region:"cn", pax:["KE"], cgo:["KEc","5Y"] , sub:"hd" },
-  { code:"TNA", city:"济南",   cityEn:"Jinan",     region:"cn", pax:["KE"], cgo:["KJ"] , sub:"hd" },
+  { code:"TNA", city:"济南",   cityEn:"Jinan",     region:"cn", pax:["KE"], cgo:["KJ","SF"] , sub:"hd" },
   { code:"WEH", city:"威海",   cityEn:"Weihai",    region:"cn", pax:["KE","OZ","7C"], cgo:[] , sub:"hd" },
   { code:"YNT", city:"烟台",   cityEn:"Yantai",    region:"cn", pax:["KE","OZ","LJ"], cgo:["OZc","CF","KJ","7Ccargo", "CZc"] , sub:"hd" },
   { code:"NKG", city:"南京",   cityEn:"Nanjing",   region:"cn", pax:["OZ"], cgo:[] , sub:"hd" },
@@ -122,7 +125,7 @@ const DESTINATIONS = [
   { code:"NNG", city:"南宁",   cityEn:"Nanning",   region:"cn", pax:["LJ"], cgo:[] , sub:"hn" },
   { code:"INC", city:"银川",   cityEn:"Yinchuan",  region:"cn", pax:["LJ"], cgo:[] , sub:"xb" },
   { code:"DYX", city:"张家界", cityEn:"Zhangjiajie",region:"cn", pax:["3U"], cgo:[] , sub:"hz" },
-  { code:"HKG", city:"香港",   cityEn:"Hong Kong", region:"cn", pax:["KE","OZ","CX","HX","UO","7C"], cgo:["KEc","OZc","CXc","HXc","FX","5X","DP","PO", "CZc", "KJ", "YP"] , sub:"gat" },
+  { code:"HKG", city:"香港",   cityEn:"Hong Kong", region:"cn", pax:["KE","OZ","CX","HX","UO","7C","TW"], cgo:["KEc","OZc","CXc","HXc","FX","5X","DP","PO", "CZc", "KJ", "YP", "7C", "TW"] , sub:"gat" },
   { code:"MFM", city:"澳门",   cityEn:"Macau",     region:"cn", pax:["NX","LJ","KE"], cgo:[ "CZc" ] , sub:"gat" },
 
   /* ============ 日本 ============ */
@@ -153,8 +156,8 @@ const DESTINATIONS = [
   /* ============ 东南亚 ============ */
   { code:"BKK", city:"曼谷",     cityEn:"Bangkok",        region:"sea", pax:["KE","OZ","7C","TW","LJ"], cgo:["KEc","OZc", "CZc"] },
   { code:"HKT", city:"普吉",     cityEn:"Phuket",         region:"sea", pax:["OZ"], cgo:[ "CZc" ] },
-  { code:"SIN", city:"新加坡",   cityEn:"Singapore",      region:"sea", pax:["KE","OZ","SQ"], cgo:["KEc","OZc","DP","PO","5Y", "CZc"] },
-  { code:"KUL", city:"吉隆坡",   cityEn:"Kuala Lumpur",   region:"sea", pax:["KE","MH"], cgo:["KEc", "CZc"] },
+  { code:"SIN", city:"新加坡",   cityEn:"Singapore",      region:"sea", pax:["KE","OZ","SQ","CI"], cgo:["KEc","OZc","DP","PO","5Y", "CZc", "KJ", "SQ", "CI"] },
+  { code:"KUL", city:"吉隆坡",   cityEn:"Kuala Lumpur",   region:"sea", pax:["KE","MH","D7"], cgo:["KEc", "CZc", "D7"] },
   { code:"PEN", city:"槟城",     cityEn:"Penang",         region:"sea", pax:["KE"], cgo:["KEc", "CZc"] },
   { code:"BKI", city:"亚庇",     cityEn:"Kota Kinabalu",  region:"sea", pax:["KE","OZ","ZE"], cgo:[ "CZc" ] },
   { code:"HAN", city:"河内",     cityEn:"Hanoi",          region:"sea", pax:["KE","OZ","VJ"], cgo:["KEc","OZc","KJ","7Ccargo", "CZc"] },
@@ -172,6 +175,9 @@ const DESTINATIONS = [
   { code:"REP", city:"暹粒",     cityEn:"Siem Reap",      region:"sea", pax:["OZ","ZE"], cgo:[ "CZc" ] },
   { code:"VTE", city:"万象",     cityEn:"Vientiane",      region:"sea", pax:["LJ"], cgo:[ "CZc" ] },
   { code:"RGN", city:"仰光",     cityEn:"Yangon",         region:"sea", pax:["KE"], cgo:[ "CZc" ] },
+
+  /* ============ 美洲（北美 / 中南美）============ */
+  { code:"MEX", city:"墨西哥城", cityEn:"Mexico City",    region:"am", pax:["AM"], cgo:["AM"] },
 ];
 
 /* 数据同步时间（每次数据更新后修改此字段，界面会显示） */
@@ -191,12 +197,17 @@ const TYPES = {
  *   fsc     燃油附加（KRW/kg），0 = 无
  *   cgc     地勤附加（固定金额数组，按票计）
  *   allIn   true = ALL-IN，不再另计 FSC/CGC
+ *   noMarkup true = 表内已是对外售价，不再乘系数（如 O3236）
+ * 目的地行内可覆盖航司级字段（同一航司不同航线报价不同时使用）：
+ *   label / effective / fsc / cgc / allIn / noMarkup / carrierNote（替换航司级 note）
+ *   transfer true = 转机（界面显示「转机」角标），via = 中转站代码
+ *   note    本航线备注（追加显示）
  * 说明：原表未列出的段位此处已按上一段延用，并在 note 中标注
  * ⚠ 国际价格随时变动，仅作参考
  * ============================================================ */
 const AIR_FREIGHT_RATES = {
   currency: "KRW",
-  updated: "2026-11-11",
+  updated: "2026-11-13",
   disclaimer: "国际价格变动，仅作参考",
 
   /* 客运航班（腹舱）沿用同公司货运表的别名 */
@@ -224,14 +235,28 @@ const AIR_FREIGHT_RATES = {
         /* —— 东南亚 —— */
         BKK: { m: 55820, n: 2710, w45: 2300, w100: 2100, w300: 1900, w500: 1700, w1000: 1500 },
         HKT: { m: 55820, n: 2120, w45: 1800, w100: 1600, w300: 1400, w500: 1200, w1000: 1000 },
-        SIN: { m: 55820, n: 2240, w45: 1900, w100: 1700, w300: 1500, w500: 1300, w1000: 1300 },
-        KUL: { m: 55820, n: 2830, w45: 2400, w100: 2200, w300: 2000, w500: 1800, w1000: 1600 },
+        /* SIN / KUL：2026-11-13 新报价，经 CAN 转机（替换原 Golden Phoenix 表行；新报价无 M/N，<45K 按 +45K 计） */
+        SIN: { w45: 2530, w100: 2330, w300: 2120, w500: 1920, w1000: 1920,
+               transfer: true, via: "CAN", label: "CZ ICN–CAN–SIN（转机）", effective: "2026-11-13 ~", fsc: 0,
+               cgc: [ { label: "MAWB", amount: 1900 }, { label: "HAWB", amount: 1900 } ],
+               carrierNote: "FSC 없음（无燃油附加）· CGC 另计 1,900/MAWB + 1,900/HAWB",
+               note: "CAN/SIN CZ353 ETD 08:35 / ETA 12:30 B78C（宽体）每日 · +1000K 原表未列，按 +500K 延用；无 N 段" },
+        KUL: { w45: 2430, w100: 2220, w300: 2020, w500: 1820, w1000: 1820,
+               transfer: true, via: "CAN", label: "CZ ICN–CAN–KUL（转机）", effective: "2026-11-13 ~", fsc: 0,
+               cgc: [ { label: "MAWB", amount: 1900 }, { label: "HAWB", amount: 1900 } ],
+               carrierNote: "FSC 없음（无燃油附加）· CGC 另计 1,900/MAWB + 1,900/HAWB",
+               note: "CAN/KUL CZ349 ETD 08:30 / ETA 12:45 B789（宽体）每日 · +1000K 原表未列，按 +500K 延用；无 N 段" },
         PEN: { m: 55820, n: 2120, w45: 1800, w100: 1600, w300: 1400, w500: 1200, w1000: 1000 },
         BKI: { m: 55820, n: 2710, w45: 2300, w100: 2100, w300: 1900, w500: 1700, w1000: 1500 },
         HAN: { m: 55820, n: 2120, w45: 1800, w100: 1600, w300: 1400, w500: 1200, w1000: 1000 },
         SGN: { m: 55820, n: 2120, w45: 1800, w100: 1600, w300: 1400, w500: 1200, w1000: 1000 },
         CXR: { m: 55820, n: 1880, w45: 1600, w100: 1400, w300: 1200, w500: 1000, w1000: 800 },
-        MNL: { m: 55820, n: 2480, w45: 2100, w100: 1900, w300: 1700, w500: 1500, w1000: 1500 },
+        /* MNL：2026-11-13 新报价，经 CAN 转机（替换原表行） */
+        MNL: { m: 56750, n: 2520, w45: 2140, w100: 1930, w300: 1730, w500: 1530, w1000: 1530,
+               transfer: true, via: "CAN", label: "CZ ICN–CAN–MNL（转机）", effective: "2026-11-13 ~", fsc: 0,
+               cgc: [ { label: "MAWB", amount: 1900 }, { label: "HAWB", amount: 1900 } ],
+               carrierNote: "유가없고（无燃油附加）· CGC 另计 1,900/MAWB + 1,900/HAWB",
+               note: "+500K 起 FLAT 1,530/kg" },
         CEB: { m: 55820, n: 4950, w45: 4090, w100: 3890, w300: 3690, w500: 3490, w1000: 3190 },
         CGK: { m: 55820, n: 3890, w45: 3190, w100: 2990, w300: 2790, w500: 2590, w1000: 2400 },
         DPS: { m: 55820, n: 2360, w45: 2000, w100: 1800, w300: 1600, w500: 1400, w1000: 1200 },
@@ -252,6 +277,10 @@ const AIR_FREIGHT_RATES = {
         /* TAO：CZ6010（+1000K 原表未列，按 +500K 延用） */
         TAO: { m: 42500, n: 6780, w45: 2100, w100: 1900, w300: 1600, w500: 1500, w1000: 1500,
                note: "CZ6010 · +1000K 原表未列，按 +500K 延用" },
+        /* XIY：2026-11-13 新报价；CZ 无 ICN–XIY 直飞（flightconnections / flightmapper 仅 KE、OZ、MU 直飞），按转机标注 */
+        XIY: { m: 42500, n: 5890, w45: 1000, w100: 1000, w300: 1000, w500: 1000, w1000: 1000,
+               transfer: true, label: "CZ ICN–XIY（转机）", effective: "2026-11-13 ~",
+               note: "CZ 无仁川—西安直飞，经国内转机 · +45K 起 FLAT 1,000/kg" },
       },
     },
 
@@ -294,6 +323,10 @@ const AIR_FREIGHT_RATES = {
       rates: {
         HKG: { m: 45000, n: 4700, w45: 600, w100: 300, w300: 300, w500: 300, w1000: 300,
                note: "+300K 以上原表未列，按 +100K 延用" },
+        SIN: { w45: 2700, w100: 1400, w300: 1400, w500: 1400, w1000: 1400,
+               label: "KJ ICN–SIN", effective: "2026-11-13 ~",
+               carrierNote: "FSC 1,650/kg 另计",
+               note: "+100K 运价需订舱时申请运价确认（CNFM）· 原表无 M/N，+300K 以上按 +100K 延用" },
       },
     },
 
@@ -307,6 +340,19 @@ const AIR_FREIGHT_RATES = {
       rates: {
         HKG: { m: 46000, n: 4800, w45: 2200, w100: 650, w300: 650, w500: 650, w1000: 650,
                note: "+100K 起 FLAT 650/kg" },
+        /* —— 东南亚（2026-11-13）：FSC 中距离；SIN/KUL 原表未写金额，按同期 KE MNL 报价的 1,230/kg 计 —— */
+        SIN: { w45: 2800, w100: 1750, w300: 1750, w500: 1750, w1000: 1750,
+               label: "KE ICN–SIN", effective: "2026-11-13 ~", fsc: 1230, cgc: [ { label: "MAWB", amount: 3000 } ],
+               carrierNote: "FSC 中距离（按 1,230/kg 计，待确认）· CGC 3,000/MAWB 另计",
+               note: "原表无 M/N，+300K 以上按 +100K 延用" },
+        KUL: { w45: 3900, w100: 2900, w300: 2900, w500: 2900, w1000: 2900,
+               label: "KE ICN–KUL", effective: "2026-11-13 ~", fsc: 1230, cgc: [ { label: "MAWB", amount: 3000 } ],
+               carrierNote: "FSC 中距离（按 1,230/kg 计，待确认）· CGC 3,000/MAWB 另计",
+               note: "原表无 M/N，+300K 以上按 +100K 延用" },
+        MNL: { m: 55000, n: 6800, w45: 3900, w100: 2100, w300: 2100, w500: 2100, w1000: 2100,
+               label: "KE ICN–MNL", effective: "2026-11-13 ~", fsc: 1230, cgc: [ { label: "MAWB", amount: 3000 } ],
+               carrierNote: "FSC 1,230/kg · CGC 3,000/MAWB 另计",
+               note: "+100K 起 FLAT 2,100/kg" },
       },
     },
 
@@ -323,18 +369,149 @@ const AIR_FREIGHT_RATES = {
                note: "+100K 起 FLAT 400/kg" },
       },
     },
+
+    /* ===== 韩亚航空 OZ（马尼拉）===== */
+    OZc: {
+      code: "OZ",
+      label: "OZ ICN–MNL",
+      effective: "2026-11-13 ~",
+      fsc: 1230,
+      note: "FSC 1,230/kg · ECC 3,000/MAWB 另计",
+      cgc: [ { label: "ECC", amount: 3000 } ],
+      rates: {
+        MNL: { m: 55000, n: 6800, w45: 3100, w100: 2300, w300: 2300, w500: 2300, w1000: 2300,
+               note: "+100K 起 FLAT 2,300/kg" },
+      },
+    },
+
+    /* ===== 顺丰航空 O3（济南）· 对外售价，不乘系数 ===== */
+    SF: {
+      code: "O3",
+      label: "O3236 ICN–TNA",
+      effective: "2026-11-13 ~",
+      noMarkup: true,
+      fsc: 0,
+      note: "对外价 450/kg，不分段（其他费用不变）",
+      rates: {
+        TNA: { n: 450, w45: 450, w100: 450, w300: 450, w500: 450, w1000: 450 },
+      },
+    },
+
+    /* ===== 中国邮政航空 CF（西安）===== */
+    CF: {
+      code: "CF",
+      label: "CF202 ICN–XIY",
+      effective: "2026-11-13 ~",
+      allIn: true,
+      fsc: 0,
+      note: "ALL-IN（已含燃油附加与地勤，不再另计）· 周三／周五 20:30–23:00",
+      rates: {
+        XIY: { m: 46000, n: 5890, w45: 5650, w100: 5650, w300: 5650, w500: 5650, w1000: 5650,
+               note: "+45K 起 FLAT 5,650/kg" },
+      },
+    },
+
+    /* ===== 亚洲航空X D7（吉隆坡，直飞宽体）===== */
+    D7: {
+      code: "D7",
+      label: "D7 ICN–KUL 直飞",
+      effective: "2026-11-13 ~",
+      fsc: 980,
+      note: "FSC 980/kg · AWB FEE 8,000/MAWB + MC FEE 5,500/MAWB 另计",
+      cgc: [ { label: "AWB FEE", amount: 8000 }, { label: "MC FEE", amount: 5500 } ],
+      rates: {
+        /* 原表「+45K 5,000 / +300K 4,200 / +300, 3,900」+300 重复出现，按 +100K 4,200 / +300K 3,900 理解（待确认） */
+        KUL: { m: 121000, n: 6600, w45: 5000, w100: 4200, w300: 3900, w500: 3700, w1000: 3600,
+               note: "原表 +300K 出现两次（4,200 / 3,900），暂按 +100K 4,200、+300K 3,900 计，待确认" },
+      },
+    },
+
+    /* ===== 新加坡航空 SQ（新加坡）===== */
+    SQ: {
+      code: "SQ",
+      label: "SQ ICN–SIN",
+      effective: "2026-11-13 ~",
+      fsc: 0,
+      note: "FSC 中距离另计（原表未写金额，未计入合计）",
+      rates: {
+        SIN: { w45: 2900, w100: 1500, w300: 1500, w500: 1500, w1000: 1500,
+               note: "原表无 M/N，+300K 以上按 +100K 延用" },
+      },
+    },
+
+    /* ===== 济州航空 7C（香港）===== */
+    "7C": {
+      code: "7C",
+      label: "7C ICN–HKG",
+      effective: "2026-11-13 ~",
+      allIn: true,
+      fsc: 0,
+      note: "ALL-IN（已含燃油附加与地勤，不再另计）",
+      rates: {
+        HKG: { m: 45000, n: 4400, w45: 2300, w100: 1700, w300: 1700, w500: 1700, w1000: 1700,
+               note: "+100K 起 FLAT 1,700/kg" },
+      },
+    },
+
+    /* ===== 德威航空 TW（香港）===== */
+    TW: {
+      code: "TW",
+      label: "TW ICN–HKG",
+      effective: "2026-11-13 ~",
+      allIn: true,
+      fsc: 0,
+      note: "ALL-IN（已含燃油附加与地勤，不再另计）",
+      rates: {
+        HKG: { m: 45000, n: 4500, w45: 1200, w100: 1200, w300: 1200, w500: 1200, w1000: 1200,
+               note: "+45K 起 FLAT 1,200/kg" },
+      },
+    },
+
+    /* ===== 墨西哥航空 AM（墨西哥城）===== */
+    AM: {
+      code: "AM",
+      label: "AM091 ICN–MEX",
+      effective: "2026-11-13 ~",
+      allIn: true,
+      fsc: 0,
+      note: "ALL-IN · AM091 ETD 11:40 / ETA 10:35 B789（宽体）每日",
+      rates: {
+        MEX: { w45: 14000, w100: 11500, w300: 11500, w500: 11500, w1000: 11500,
+               note: "原表无 M/N（<45K 按 +45K 计），+300K 以上按 +100K 延用" },
+      },
+    },
   },
 };
 
 /* 手工补充班期（自动抓取源没有的航班，例如 CZ 全货机）
  * 格式： "目的地代码|航司二字码": [ { no:"CZ6010", days:"Tue,Fri", dep:"01:20", arr:"02:20" } ]
  * days 用英文缩写：Mon,Tue,Wed,Thu,Fri,Sat,Sun；每天飞写 "Daily"
+ * 同一航班号不同班期可写多条；手工条目会整体替换自动数据中的同号航班
  */
 const MANUAL_FLIGHTS = {
   // "TAO|CZ": [ { no: "CZ6010", days: "Tue,Fri", dep: "01:20", arr: "02:20" } ],
+  /* 2026-11-13 补充 · 次日到达的 arr 直接写当地时刻（与自动数据一致） */
+  "XIY|CF": [ { no: "CF202", days: "Wed,Fri", dep: "20:30", arr: "23:00", ac: "B737F", mode: "cgo" } ],
+  "TNA|O3": [ { no: "O3236", days: "Mon,Wed,Fri", dep: "04:00", arr: "05:00", ac: "B757F", mode: "cgo" } ],
+  "MEX|AM": [ { no: "AM091", days: "Daily", dep: "11:40", arr: "10:35", ac: "B789", mode: "pax" } ],
+  /* CI 新加坡班期（按用户提供的 CI 班期表录入，原表应为经台北 TPE 的航段时刻；频率数字按 1=周一…7=周日） */
+  "SIN|CI": [
+    { no: "CI753",  days: "Daily",   dep: "08:20", arr: "13:05", ac: "A359",      mode: "pax" },
+    { no: "CI755",  days: "Daily",   dep: "19:55", arr: "00:40", ac: "A321",      mode: "pax" },
+    { no: "CI5871", days: "Thu,Sat", dep: "23:10", arr: "04:00", ac: "B77F/B74F", mode: "cgo" },
+    { no: "CI5877", days: "Mon",     dep: "23:50", arr: "04:40", ac: "B74F",      mode: "cgo" },
+    { no: "CI5883", days: "Tue",     dep: "23:10", arr: "04:00", ac: "B77F",      mode: "cgo" },
+    { no: "CI6581", days: "Tue",     dep: "08:40", arr: "13:30", ac: "B77F",      mode: "cgo" },
+    { no: "CI6865", days: "Sun",     dep: "06:30", arr: "11:20", ac: "B74F",      mode: "cgo" },
+    { no: "CI6865", days: "Fri",     dep: "23:10", arr: "04:00", ac: "B74F",      mode: "cgo" },
+    { no: "CI6871", days: "Thu",     dep: "23:10", arr: "04:00", ac: "B74F",      mode: "cgo" },
+    { no: "CI6875", days: "Wed",     dep: "23:10", arr: "04:00", ac: "B74F",      mode: "cgo" },
+    { no: "CI6875", days: "Fri",     dep: "05:55", arr: "10:45", ac: "B74F",      mode: "cgo" },
+  ],
 };
 
-/* 城市二级分组（中国八大区 / 日本四岛；东南亚不分） */const SUBREGIONS = {
+/* 城市二级分组（中国八大区 / 日本四岛；东南亚、美洲不分） */
+const SUBREGIONS = {
   cn: [
     { id: "hd",  name: "华东",     en: "EAST CHINA" },
     { id: "hb",  name: "华北",     en: "NORTH CHINA" },
@@ -352,4 +529,5 @@ const MANUAL_FLIGHTS = {
     { id: "sk",  name: "四国",       en: "SHIKOKU" },
   ],
   sea: [],
+  am: [],
 };

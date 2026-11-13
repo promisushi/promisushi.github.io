@@ -1143,3 +1143,22 @@ em {
   .fee-row { grid-template-columns: 1fr auto; }
   .ft-val { font-size: 20px; }
 }
+
+/* 转机角标（2026-11-13）：非直飞运价在航司代码 / 承运选择上标注 */
+.tf-badge {
+  display: inline-block;
+  margin-left: 3px;
+  padding: 0 4px;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 14px;
+  letter-spacing: 0;
+  color: #0b0e13;
+  background: #ff8a3d;
+  border-radius: 3px;
+  vertical-align: super;
+}
+.chip.code-chip .tf-badge { position: relative; top: -2px; vertical-align: top; }
+.tf-badge.cc-tf { margin-left: 6px; vertical-align: 1px; }
+.chip.carrier-chip.selected .tf-badge { background: #0b0e13; color: #ff8a3d; }
