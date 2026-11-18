@@ -697,7 +697,7 @@ document.getElementById("bkSend").addEventListener("click", async () => {
   const actChip = document.querySelector("#carrierSelect .carrier-chip.selected");
   const w = document.getElementById("inWeight").value, v = document.getElementById("inVolume").value;
   const payload = {
-    group, cargo, hp: document.getElementById("bkHp").value,
+    group, cargo, date: document.getElementById("bkDate").value, hp: document.getElementById("bkHp").value,
     dest: [txt("feeRouteTitle"), txt("feeRouteSub")].filter(Boolean).join(" · "),
     carrier: actChip ? actChip.textContent.replace(/\s+/g, " ").trim() : "",
     weight: w ? w + " kg" : "", volume: v ? v + " CBM" : "",
