@@ -682,3 +682,32 @@ updateStats();
 render();
 const el = document.getElementById("dataUpdated");
 if (el && typeof DATA_UPDATED !== "undefined") el.textContent = DATA_UPDATED;
+
+/* ---------- 预订通知 ---------- */
+const BOOKING_ENDPOINT = "https://yunda-booking.yundakorea.workers.dev";
+document.getElementById("bkSend").addEventListener("click", async () => {
+  const st = document.getElementById("bkStatus"), btn = document.getElementById("bkSend");
+  const group = document.getElementById("bkGroup").value.trim();
+  const cargo = document.getElementById("bkCargo").value.trim();
+  st.className = "bk-status";
+  if (!group || !cargo) { st.textContent = "请填写企微群名和货量"; st.classList.add("err"); return; }
+  const txt = id => (document.getElementById(id)?.textContent || "").trim();
+  const actChip = document.querySelector("#carrierSelect .carrier-chip.selected");
+  const w = document.getElementById("inWeight").value, v = document.getElementById("inVolume").value;
+  const payload = {
+    group, cargo, hp: document.getElementById("bkHp").value,
+    dest: [txt("feeRouteTitle"), txt("feeRouteSub")].filter(Boolean).join(" · "),
+    carrier: actChip ? actChip.textContent.replace(/\s+/g, " ").trim() : "",
+    weight: w ? w + " kg" : "", volume: v ? v + " cm³" : "",
+    cw: [txt("wsActual"), txt("wsVolume")].some(x => x && x !== "— kg") ? `实重 ${txt("wsActual")} / 泡重 ${txt("wsVolume")}` : "",
+    total: txt("feeTotal") !== "₩ 0" ? txt("feeTotal") : ""
+  };
+  btn.disabled = true; st.textContent = "发送中…";
+  try {
+    const r = await fetch(BOOKING_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.ok) { st.textContent = "已发送，我们会尽快与您联系 ✓"; st.classList.add("ok"); document.getElementById("bkCargo").value = ""; }
+    else { st.textContent = j.err || "发送失败，请稍后再试或直接在群里联系我们"; st.classList.add("err"); }
+  } catch (e) { st.textContent = "网络错误，请稍后再试或直接在群里联系我们"; st.classList.add("err"); }
+  btn.disabled = false;
+});
