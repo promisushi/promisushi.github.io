@@ -427,7 +427,7 @@ function openFeeModal(code, mode) {
 function calcFees() {
   const value = num("inValue");
   const weight = num("inWeight");
-  const volume = num("inVolume");
+  const volume = num("inVolume") * 1000000; // 输入为立方米，换算成 cm³
 
   /* —— 报关费 —— */
   const customsEl = document.getElementById("feeCustoms");
@@ -700,7 +700,7 @@ document.getElementById("bkSend").addEventListener("click", async () => {
     group, cargo, hp: document.getElementById("bkHp").value,
     dest: [txt("feeRouteTitle"), txt("feeRouteSub")].filter(Boolean).join(" · "),
     carrier: actChip ? actChip.textContent.replace(/\s+/g, " ").trim() : "",
-    weight: w ? w + " kg" : "", volume: v ? v + " cm³" : "",
+    weight: w ? w + " kg" : "", volume: v ? v + " CBM" : "",
     cw: [txt("wsActual"), txt("wsVolume")].some(x => x && x !== "— kg") ? `实重 ${txt("wsActual")} / 泡重 ${txt("wsVolume")}` : "",
     total: txt("feeTotal") !== "₩ 0" ? txt("feeTotal") : ""
   };

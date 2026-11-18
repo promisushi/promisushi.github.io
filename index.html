@@ -6,7 +6,7 @@
 <title>韩国韵达·速邮达 | 仁川航线索引</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=202611180706">
+<link rel="stylesheet" href="style.css?v=202611180710">
 </head>
 <body>
 
@@ -129,9 +129,9 @@
           <span class="field-hint">计费重取实重/泡重较大者</span>
         </label>
         <label class="field">
-          <span class="field-name">体积 <em>CM³</em></span>
-          <input type="number" id="inVolume" min="0" placeholder="如 600000（=0.6m³）">
-          <span class="field-hint">泡重 = 体积 ÷ 6000</span>
+          <span class="field-name">体积 <em>CBM（m³）</em></span>
+          <input type="number" id="inVolume" min="0" step="0.001" placeholder="如 3（=3 立方米）">
+          <span class="field-hint">单位：立方米 · 泡重 = 体积 × 1,000,000 ÷ 6000</span>
         </label>
       </div>
     </div>
@@ -235,8 +235,8 @@
   <p>Incheon Air Route Index — YUNDA KOREA · 速邮达 <em>// for ops &amp; client reference</em></p>
 </footer>
 
-<script src="data.js?v=202611180706"></script>
-<script src="flights-data.js?v=202611180706"></script>
-<script src="app.js?v=202611180706"></script>
+<script src="data.js?v=202611180710"></script>
+<script src="flights-data.js?v=202611180710"></script>
+<script src="app.js?v=202611180710"></script>
 </body>
 </html>
