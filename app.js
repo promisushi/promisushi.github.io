@@ -558,7 +558,9 @@ function calcFees() {
 
 /* ---------- 弹窗事件 ---------- */
 document.getElementById("feeClose").addEventListener("click", () => { $modal.hidden = true; });
-$modal.addEventListener("click", e => { if (e.target === $modal) $modal.hidden = true; });
+let maskDown = false;
+$modal.addEventListener("mousedown", e => { maskDown = e.target === $modal; });
+$modal.addEventListener("click", e => { if (e.target === $modal && maskDown) $modal.hidden = true; maskDown = false; });
 document.addEventListener("keydown", e => { if (e.key === "Escape") $modal.hidden = true; });
 
 /* 查看所选航班详情 */
