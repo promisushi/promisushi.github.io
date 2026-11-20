@@ -1177,3 +1177,75 @@ em {
 .booking-grid > .field:nth-of-type(4) { grid-column: span 2; }
 .booking-grid > .bk-send { grid-column: span 1; }
 @media (max-width: 640px) { .booking-grid > .field, .booking-grid > .bk-send { grid-column: auto !important; } }
+
+/* ============ 弹窗分页 1/2 + 报关单申请 ============ */
+.page-tabs { display: flex; align-items: center; gap: 6px; margin-top: 14px; border-bottom: 1px solid var(--line); }
+.page-tab { background: transparent; border: 1px solid transparent; border-bottom: none; color: var(--text-dim); font-family: "Noto Sans SC", sans-serif; font-size: 13px; padding: 8px 14px 7px; cursor: pointer; display: flex; align-items: baseline; gap: 6px; margin-bottom: -1px; transition: all .15s; }
+.page-tab b { font-family: "Saira", sans-serif; font-style: italic; font-size: 15px; color: var(--text-dim); }
+.page-tab em { font-family: "Saira", sans-serif; font-size: 9px; letter-spacing: 2px; opacity: .7; }
+.page-tab:hover { color: var(--text); }
+.page-tab.active { color: var(--text); border-color: var(--line-strong); background: linear-gradient(180deg, rgba(255,216,0,0.10), rgba(255,216,0,0) 80%); box-shadow: inset 0 2px 0 var(--accent); }
+.page-tab.active b { color: var(--accent); }
+.page-ind { margin-left: auto; font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
+.fee-page[hidden] { display: none; }
+.page-next { margin-top: 18px; width: 100%; background: transparent; border: 1px dashed var(--line-strong); color: var(--accent); font-family: "Noto Sans SC", sans-serif; font-size: 13px; padding: 10px; cursor: pointer; letter-spacing: 1px; transition: all .15s; }
+.page-next:hover { border-color: var(--accent); background: var(--accent-soft); }
+.page-next.back { color: var(--text-dim); }
+
+.cd-section { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 22px; }
+.cd-top { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+.cd-group-field { flex: 1; min-width: 200px; }
+.cd-pane { margin-top: 14px; }
+.cd-pane[hidden] { display: none; }
+.cd-drop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 22px 12px; border: 1px dashed var(--line-strong); background: rgba(13,17,23,0.5); cursor: pointer; text-align: center; transition: all .15s; }
+.cd-drop:hover, .cd-drop.drag { border-color: var(--accent); background: var(--accent-soft); }
+.cd-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.cd-drop-main { font-size: 14px; color: var(--text); }
+.cd-drop.has .cd-drop-main { color: var(--accent); }
+.cd-drop-sub { font-size: 11px; color: var(--text-dim); }
+.cd-row { display: flex; gap: 10px; align-items: flex-end; margin-top: 10px; }
+.cd-row .grow { flex: 1; }
+.cd-sub { font-size: 12px; color: var(--text); margin: 14px 0 6px; letter-spacing: 1px; }
+.cd-sub em { font-family: "Saira", sans-serif; font-size: 9px; letter-spacing: 2px; color: var(--accent); margin-left: 6px; }
+.cd-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 10px; }
+.cd-grid .span1 { grid-column: span 1; } .cd-grid .span2 { grid-column: span 2; } .cd-grid .span4 { grid-column: span 4; }
+.field select, .cd-lines input, .cd-paste textarea {
+  background: linear-gradient(160deg, rgba(30, 36, 46, 0.7), rgba(13, 17, 23, 0.8));
+  border: 1px solid var(--line); color: var(--text); font-family: "Saira", "Noto Sans SC", sans-serif; font-size: 13px; padding: 8px 10px; outline: none; width: 100%;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.field select { color-scheme: dark; }
+.field select:focus, .cd-lines input:focus, .cd-paste textarea:focus { border-color: var(--accent); }
+.cd-goods-mode { margin-bottom: 8px; }
+.cd-paste { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.cd-paste[hidden] { display: none; }
+.cd-paste textarea { flex: 1 1 100%; resize: vertical; font-family: "JetBrains Mono", "Noto Sans SC", monospace; font-size: 12px; }
+.cd-paste textarea::placeholder { color: #556; font-family: "Noto Sans SC", sans-serif; }
+.cd-btn { background: var(--glass-2, rgba(30,36,46,.8)); border: 1px solid var(--line-strong); color: var(--text); font-family: "Noto Sans SC", sans-serif; font-size: 12px; padding: 7px 14px; cursor: pointer; transition: all .15s; }
+.cd-btn:hover { border-color: var(--accent); color: var(--accent); }
+.cd-btn:disabled { opacity: .5; cursor: default; }
+.cd-lines { border: 1px solid var(--line); background: rgba(13,17,23,0.35); }
+.cd-line { display: grid; grid-template-columns: 1fr 0.85fr 2.3fr 0.6fr 1.15fr 1.1fr 28px; gap: 4px; padding: 4px 6px; align-items: center; }
+.cd-line-head { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; border-bottom: 1px solid var(--line); padding-top: 6px; }
+.cd-line input { padding: 6px 7px; font-size: 12px; }
+.cd-line input.ko { border-color: #f87171; box-shadow: 0 0 8px rgba(248,113,113,.3); }
+.cd-line .amt { font-family: "JetBrains Mono", monospace; font-size: 12px; text-align: right; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cd-line .del { background: transparent; border: 1px solid var(--line); color: var(--text-dim); cursor: pointer; height: 28px; }
+.cd-line .del:hover { border-color: var(--danger, #f87171); color: var(--danger, #f87171); }
+.cd-line-foot { display: flex; justify-content: space-between; align-items: center; padding: 6px; border-top: 1px solid var(--line); gap: 8px; flex-wrap: wrap; }
+.cd-total { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--text); }
+.cd-warn { font-size: 11px; color: #f87171; padding: 4px 6px 0; }
+.cd-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+@media (max-width: 640px) {
+  .page-tab { padding: 8px 8px 7px; font-size: 12px; } .page-tab em { display: none; }
+  .cd-grid { grid-template-columns: 1fr 1fr; }
+  .cd-grid .span2, .cd-grid .span4 { grid-column: span 2; }
+  .cd-row { flex-direction: column; align-items: stretch; }
+  .cd-line { grid-template-columns: 1fr 1fr 1fr; grid-template-areas: "mk cat del" "desc desc desc" "qty price amt"; border-bottom: 1px solid var(--line); padding: 8px 6px; }
+  .cd-line-head { display: none; }
+  .cd-line > :nth-child(1) { grid-area: mk; } .cd-line > :nth-child(2) { grid-area: cat; } .cd-line > :nth-child(3) { grid-area: desc; }
+  .cd-line > :nth-child(4) { grid-area: qty; } .cd-line > :nth-child(5) { grid-area: price; } .cd-line > :nth-child(6) { grid-area: amt; } .cd-line > :nth-child(7) { grid-area: del; justify-self: end; width: 28px; }
+  .cd-actions { flex-direction: column; } .cd-actions > * { width: 100%; }
+  .field select { font-size: 16px; }
+}
+.bk-status a { color: var(--accent); margin-left: 6px; }

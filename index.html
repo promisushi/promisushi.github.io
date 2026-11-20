@@ -6,7 +6,7 @@
 <title>韩国韵达·速邮达 | 仁川航线索引</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=202611180726">
+<link rel="stylesheet" href="style.css?v=202611200705">
 </head>
 <body>
 
@@ -95,6 +95,14 @@
     <p class="modal-route-sub" id="feeRouteSub"></p>
     <button class="av-link" id="feeAvLink" hidden>查看航班详情 ▸</button>
 
+    <div class="page-tabs" id="feePageTabs" role="tablist">
+      <button class="page-tab active" data-page="1" role="tab"><b>1</b> 费用估算 <em>ESTIMATE</em></button>
+      <button class="page-tab" data-page="2" role="tab"><b>2</b> 预订 · 报关 <em>BOOKING &amp; DOCS</em></button>
+      <span class="page-ind" id="feePageInd">1 / 2</span>
+    </div>
+
+    <div class="fee-page" data-page="1">
+
     <div class="fee-section">
       <p class="block-label"><em>CARRIER</em> 承运航班 <span class="carrier-hint">点击切换承运并重算费用</span></p>
       <div class="airline-chips" id="carrierSelect"></div>
@@ -181,6 +189,10 @@
       </div>
     </div>
 
+      <button class="page-next" data-goto="2">下一页：预订通知 / 报关单申请 ▸</button>
+    </div>
+
+    <div class="fee-page" data-page="2" hidden>
     <div class="fee-section booking-section">
       <p class="block-label"><em>BOOKING</em> 预订通知 <span class="carrier-hint">提交后我们会提前收到货物信息</span></p>
       <div class="booking-grid">
@@ -204,6 +216,105 @@
         <button class="bk-send" id="bkSend">发送 ▸</button>
       </div>
       <p class="bk-status" id="bkStatus"></p>
+    </div>
+
+    <div class="fee-section cd-section">
+      <p class="block-label"><em>CUSTOMS DOCS</em> 报关单申请 <span class="carrier-hint">发票 / 箱单直接发送到我们的企微群</span></p>
+      <div class="cd-top">
+        <div class="seg-group" id="cdMode">
+          <button class="seg-btn active" data-cd="upload">表格上传<span>UPLOAD</span></button>
+          <button class="seg-btn" data-cd="make">表格制作<span>GENERATE</span></button>
+        </div>
+        <label class="field cd-group-field">
+          <span class="field-name">企微群名 <em>GROUP</em></span>
+          <input type="text" id="cdGroup" maxlength="60" placeholder="与上方预订通知同步">
+        </label>
+      </div>
+
+      <!-- 表格上传 -->
+      <div class="cd-pane" id="cdUpload">
+        <label class="cd-drop" id="cdDrop">
+          <input type="file" id="cdFile" accept=".xlsx,.xls,.pdf,.csv,.doc,.docx,.jpg,.jpeg,.png,.zip">
+          <span class="cd-drop-main" id="cdFileName">点击选择或拖入文件</span>
+          <span class="cd-drop-sub">支持 Excel（xlsx / xls）、PDF、Word、图片、ZIP · 单个文件不超过 20MB</span>
+        </label>
+        <div class="cd-row">
+          <label class="field grow">
+            <span class="field-name">备注 <em>NOTE</em></span>
+            <input type="text" id="cdUpNote" maxlength="200" placeholder="选填，如 发票号 / 货物说明">
+          </label>
+          <button class="bk-send" id="cdUpSend">上传并发送 ▸</button>
+        </div>
+        <p class="bk-status" id="cdUpStatus"></p>
+      </div>
+
+      <!-- 表格制作 -->
+      <div class="cd-pane" id="cdMake" hidden>
+        <p class="cd-sub">发货方 <em>SHIPPER / EXPORTER</em></p>
+        <div class="cd-grid">
+          <label class="field span2"><span class="field-name">发货公司 <em>COMPANY</em></span><input type="text" id="cdShName" maxlength="120" placeholder="英文公司名"></label>
+          <label class="field span2"><span class="field-name">税号 <em>TAX ID · 选填</em></span><input type="text" id="cdShTax" maxlength="40" placeholder="如 284-86-03593"></label>
+          <label class="field span4"><span class="field-name">发货地址 <em>ADDRESS</em></span><input type="text" id="cdShAddr" maxlength="200" placeholder="英文地址"></label>
+          <label class="field span2"><span class="field-name">电话 <em>TEL</em></span><input type="text" id="cdShTel" maxlength="40"></label>
+          <label class="field span2"><span class="field-name">联系人 <em>ATTN</em></span><input type="text" id="cdShAttn" maxlength="60"></label>
+        </div>
+        <p class="cd-sub">收货方 <em>CONSIGNEE</em></p>
+        <div class="cd-grid">
+          <label class="field span4"><span class="field-name">收货公司 <em>COMPANY</em></span><input type="text" id="cdCoName" maxlength="120"></label>
+          <label class="field span4"><span class="field-name">收货地址 <em>ADDRESS</em></span><input type="text" id="cdCoAddr" maxlength="200"></label>
+          <label class="field span2"><span class="field-name">电话 <em>TEL</em></span><input type="text" id="cdCoTel" maxlength="40"></label>
+          <label class="field span2"><span class="field-name">联系人 <em>ATTN</em></span><input type="text" id="cdCoAttn" maxlength="60"></label>
+        </div>
+        <p class="cd-sub">单据信息 <em>INVOICE</em></p>
+        <div class="cd-grid">
+          <label class="field span2"><span class="field-name">发票号 <em>INVOICE NO.</em></span><input type="text" id="cdInvNo" maxlength="40" placeholder="如 PD2838104032"></label>
+          <label class="field span2"><span class="field-name">日期 <em>DATE</em></span><input type="date" id="cdDate"></label>
+          <label class="field span1"><span class="field-name">贸易条款 <em>TERMS</em></span><input type="text" id="cdTerms" maxlength="40" value="FOB INCHON"></label>
+          <label class="field span1"><span class="field-name">起运港 <em>LOADING</em></span><input type="text" id="cdPol" maxlength="40" value="INCHON KOREA"></label>
+          <label class="field span1"><span class="field-name">目的地 <em>DEST.</em></span><input type="text" id="cdDest" maxlength="60"></label>
+          <label class="field span1"><span class="field-name">币种 <em>CURRENCY</em></span>
+            <select id="cdCur"><option>KRW</option><option>USD</option><option>CNY</option></select></label>
+        </div>
+
+        <p class="cd-sub">货物明细 <em>GOODS</em></p>
+        <div class="seg-group cd-goods-mode" id="cdGoodsMode">
+          <button class="seg-btn active" data-gm="lines">逐行录入<span>LINES</span></button>
+          <button class="seg-btn" data-gm="detail">粘贴购买明细<span>PURCHASE DETAIL</span></button>
+        </div>
+        <div class="cd-paste" id="cdPasteLines">
+          <textarea id="cdPasteTxt" rows="2" placeholder="可从 Excel 复制整块粘贴：品名(英文) ⇥ 数量 ⇥ 单价，每行一个品名"></textarea>
+          <button class="cd-btn" id="cdPasteBtn">导入粘贴内容</button>
+        </div>
+        <div class="cd-paste" id="cdPasteDetail" hidden>
+          <textarea id="cdDetailTxt" rows="3" placeholder="从购买明细表复制整块粘贴（可含表头）：NO. ⇥ 매입담당 ⇥ 가맹점명 ⇥ 매입일자 ⇥ 승인번호 ⇥ 결제액 ⇥ 원산지 ⇥ 제품구분 ⇥ 상품브랜드 ⇥ 상품명 …"></textarea>
+          <button class="cd-btn" id="cdDetailBtn">解析明细</button>
+          <p class="field-hint">申报金额 = 결제액 × 94.5%，四舍五入到万位；상품명 中的 *3 识别为数量 3。韩文未翻译的品名会标红，请手动改成英文。</p>
+        </div>
+        <div class="cd-lines">
+          <div class="cd-line cd-line-head"><span>Marks</span><span>类别</span><span>品名（英文）</span><span>数量</span><span>单价</span><span>金额</span><span></span></div>
+          <div id="cdLines"></div>
+          <div class="cd-line-foot">
+            <button class="cd-btn" id="cdAddLine">＋ 添加一行</button>
+            <span class="cd-total" id="cdTotal">合计 0 EA · 0</span>
+          </div>
+        </div>
+
+        <p class="cd-sub">包装 <em>PACKING</em></p>
+        <div class="cd-grid">
+          <label class="field span1"><span class="field-name">件数 <em>CT</em></span><input type="number" id="cdCt" min="0" step="1"></label>
+          <label class="field span1"><span class="field-name">净重 <em>N.W. KG</em></span><input type="number" id="cdNw" min="0" step="0.01"></label>
+          <label class="field span1"><span class="field-name">毛重 <em>G.W. KG</em></span><input type="number" id="cdGw" min="0" step="0.01"></label>
+          <label class="field span1"><span class="field-name">体积 <em>CBM · 选填</em></span><input type="number" id="cdCbm" min="0" step="0.001"></label>
+          <label class="field span4"><span class="field-name">备注 <em>NOTE</em></span><input type="text" id="cdMkNote" maxlength="200" placeholder="选填"></label>
+        </div>
+        <div class="cd-actions">
+          <button class="cd-btn" id="cdDownload">下载 Excel ⤓</button>
+          <button class="bk-send" id="cdMkSend">生成并发送 ▸</button>
+        </div>
+        <p class="bk-status" id="cdMkStatus"></p>
+      </div>
+    </div>
+      <button class="page-next back" data-goto="1">◂ 返回费用估算</button>
     </div>
   </div>
 </div>
@@ -243,8 +354,8 @@
   <p>Incheon Air Route Index — YUNDA KOREA · 速邮达 <em>// for ops &amp; client reference</em></p>
 </footer>
 
-<script src="data.js?v=202611180726"></script>
-<script src="flights-data.js?v=202611180726"></script>
-<script src="app.js?v=202611180726"></script>
+<script src="data.js?v=202611200705"></script>
+<script src="flights-data.js?v=202611200705"></script>
+<script src="app.js?v=202611200705"></script>
 </body>
 </html>

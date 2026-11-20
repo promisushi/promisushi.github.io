@@ -421,6 +421,8 @@ function openFeeModal(code, mode) {
   ["inValue", "inWeight", "inVolume"].forEach(id => document.getElementById(id).value = "");
   calcFees();
   renderSchedule();
+  setFeePage(1);
+  cdOnOpen();
   $modal.hidden = false;
 }
 
@@ -713,3 +715,544 @@ document.getElementById("bkSend").addEventListener("click", async () => {
   } catch (e) { st.textContent = "网络错误，请稍后再试或直接在群里联系我们"; st.classList.add("err"); }
   btn.disabled = false;
 });
+
+/* ---------- 弹窗分页 1/2 ---------- */
+function setFeePage(n) {
+  n = String(n);
+  document.querySelectorAll("#feeModal .fee-page").forEach(p => { p.hidden = p.dataset.page !== n; });
+  document.querySelectorAll("#feePageTabs .page-tab").forEach(t => t.classList.toggle("active", t.dataset.page === n));
+  const ind = document.getElementById("feePageInd");
+  if (ind) ind.textContent = n + " / 2";
+  const m = document.querySelector("#feeModal .modal");
+  if (m) m.scrollTop = 0;
+}
+document.getElementById("feePageTabs").addEventListener("click", e => {
+  const t = e.target.closest(".page-tab");
+  if (t) setFeePage(t.dataset.page);
+});
+document.querySelectorAll("#feeModal .page-next").forEach(b => b.addEventListener("click", () => setFeePage(b.dataset.goto)));
+
+/* ---------- 报关单申请（表格上传 / 表格制作） ---------- */
+const CD_ENDPOINT = BOOKING_ENDPOINT + "/file";
+const CD_MAX = 20 * 1024 * 1024;
+const CD_EXT = ["xlsx", "xls", "pdf", "csv", "doc", "docx", "jpg", "jpeg", "png", "zip"];
+const $cd = id => document.getElementById(id);
+const HAS_KO = /[\uac00-\ud7af\u3130-\u318f]/;
+let cdLines = [];        // {marks, cat, desc, qty, price, amt, fixed}
+let cdDetail = [];       // 购买明细原始行
+let cdGoodsMode = "lines";
+
+/* 群名两处同步 */
+$cd("bkGroup").addEventListener("input", e => { $cd("cdGroup").value = e.target.value; });
+$cd("cdGroup").addEventListener("input", e => { $cd("bkGroup").value = e.target.value; });
+
+function cdDestDefault() {
+  if (!currentDest) return "";
+  const en = (currentDest.cityEn || "").toUpperCase();
+  const special = { HKG: "HONG KONG", MFM: "MACAU", TPE: "TAIPEI, TAIWAN", KHH: "KAOHSIUNG, TAIWAN" };
+  if (special[currentDest.code]) return special[currentDest.code];
+  const country = { cn: "CHINA", jp: "JAPAN" }[currentDest.region];
+  return country ? `${en}, ${country}` : en;
+}
+function cdOnOpen() {
+  const d = cdDestDefault();
+  const el = $cd("cdDest");
+  if (!el.dataset.touched) el.value = d;
+  if (!$cd("cdDate").value) $cd("cdDate").value = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+}
+$cd("cdDest").addEventListener("input", e => { e.target.dataset.touched = "1"; });
+
+/* 模式切换 */
+$cd("cdMode").addEventListener("click", e => {
+  const b = e.target.closest(".seg-btn"); if (!b) return;
+  $cd("cdMode").querySelectorAll(".seg-btn").forEach(x => x.classList.toggle("active", x === b));
+  $cd("cdUpload").hidden = b.dataset.cd !== "upload";
+  $cd("cdMake").hidden = b.dataset.cd !== "make";
+});
+$cd("cdGoodsMode").addEventListener("click", e => {
+  const b = e.target.closest(".seg-btn"); if (!b) return;
+  $cd("cdGoodsMode").querySelectorAll(".seg-btn").forEach(x => x.classList.toggle("active", x === b));
+  cdGoodsMode = b.dataset.gm;
+  $cd("cdPasteLines").hidden = cdGoodsMode !== "lines";
+  $cd("cdPasteDetail").hidden = cdGoodsMode !== "detail";
+  if (cdGoodsMode === "detail") { $cd("cdCur").value = "KRW"; }
+  else { cdDetail = []; cdLines = cdLines.filter(l => !l.fixed); if (!cdLines.length) cdLines.push(cdBlank()); }
+  cdRender();
+});
+
+/* ---------- 通用发送 ---------- */
+async function cdPost(fd) {
+  const r = await fetch(CD_ENDPOINT, { method: "POST", body: fd });
+  const j = await r.json().catch(() => ({}));
+  if (!(r.ok && j.ok)) throw new Error(j.err || "发送失败");
+  return j;
+}
+function cdStatus(id, text, cls) { const st = $cd(id); st.className = "bk-status" + (cls ? " " + cls : ""); st.innerHTML = text; }
+function cdDestText() {
+  return [document.getElementById("feeRouteTitle").textContent.trim(), $cd("cdDest").value.trim()].filter(Boolean).join(" · ");
+}
+
+/* ---------- 表格上传 ---------- */
+const cdDrop = $cd("cdDrop");
+["dragenter", "dragover"].forEach(ev => cdDrop.addEventListener(ev, () => cdDrop.classList.add("drag")));
+["dragleave", "drop"].forEach(ev => cdDrop.addEventListener(ev, () => cdDrop.classList.remove("drag")));
+function cdCheckFile(f) {
+  if (!f) return "请先选择文件";
+  const ext = (f.name.split(".").pop() || "").toLowerCase();
+  if (!CD_EXT.includes(ext)) return "不支持该文件类型，请上传 Excel / PDF / Word / 图片 / ZIP";
+  if (f.size > CD_MAX) return "文件超过 20MB，请压缩后再上传";
+  if (f.size <= 5) return "文件为空";
+  return "";
+}
+$cd("cdFile").addEventListener("change", e => {
+  const f = e.target.files[0];
+  const err = f ? cdCheckFile(f) : "";
+  $cd("cdFileName").textContent = f ? `${f.name}（${(f.size / 1024).toFixed(1)} KB）` : "点击选择或拖入文件";
+  cdDrop.classList.toggle("has", !!f && !err);
+  cdStatus("cdUpStatus", err, err ? "err" : "");
+});
+$cd("cdUpSend").addEventListener("click", async () => {
+  const f = $cd("cdFile").files[0], group = $cd("cdGroup").value.trim(), btn = $cd("cdUpSend");
+  if (!group) return cdStatus("cdUpStatus", "请填写企微群名", "err");
+  const err = cdCheckFile(f); if (err) return cdStatus("cdUpStatus", err, "err");
+  const fd = new FormData();
+  fd.append("file", f, f.name); fd.append("filename", f.name); fd.append("group", group);
+  fd.append("kind", "表格上传（客户自有表格）"); fd.append("dest", cdDestText());
+  fd.append("note", $cd("cdUpNote").value.trim()); fd.append("hp", $cd("bkHp").value);
+  btn.disabled = true; cdStatus("cdUpStatus", "上传中…");
+  try { await cdPost(fd); cdStatus("cdUpStatus", "已发送到企微群 ✓ 我们会尽快处理", "ok"); }
+  catch (e) { cdStatus("cdUpStatus", (e.message || "发送失败") + "，请稍后再试或直接在群里发给我们", "err"); }
+  btn.disabled = false;
+});
+
+/* ---------- 表格制作：货物明细 ---------- */
+const cdBlank = () => ({ marks: "", cat: "", desc: "", qty: "", price: "", amt: 0, fixed: false });
+const cdNum = v => { const n = parseFloat(String(v ?? "").replace(/[,₩$¥\s]/g, "")); return isFinite(n) ? n : 0; };
+const cdRound = (n, d) => Math.round(n * Math.pow(10, d)) / Math.pow(10, d);
+const cdDec = () => ($cd("cdCur").value === "KRW" ? 0 : 2);
+const cdFmt = n => Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: cdDec() === 0 ? 2 : 2, minimumFractionDigits: cdDec() });
+const cdEsc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function cdCalc(l) {
+  if (l.fixed) { const q = cdNum(l.qty) || 1; l.price = cdRound(l.amt / q, 2); }
+  else l.amt = cdRound(cdNum(l.qty) * cdNum(l.price), 2);
+}
+function cdRender() {
+  const box = $cd("cdLines");
+  box.innerHTML = cdLines.map((l, i) => {
+    cdCalc(l);
+    const ko = k => HAS_KO.test(l[k]) ? " ko" : "";
+    return `<div class="cd-line" data-i="${i}">
+      <input data-k="marks" value="${cdEsc(l.marks)}" placeholder="Marks" maxlength="40">
+      <input data-k="cat" class="${ko("cat")}" value="${cdEsc(l.cat)}" placeholder="类别 如 Cosmetics" maxlength="40">
+      <input data-k="desc" class="${ko("desc")}" value="${cdEsc(l.desc)}" placeholder="英文品名 如 Clothing" maxlength="200">
+      <input data-k="qty" type="number" min="0" step="any" value="${cdEsc(l.qty)}" placeholder="数量">
+      <input data-k="price" type="number" min="0" step="any" value="${cdEsc(l.price)}" placeholder="单价"${l.fixed ? ' disabled title="按申报金额 ÷ 数量 自动计算"' : ""}>
+      <span class="amt" data-amt>${cdFmt(l.amt)}</span>
+      <button class="del" title="删除">✕</button>
+    </div>`;
+  }).join("");
+  cdTotals();
+}
+function cdTotals() {
+  const q = cdLines.reduce((s, l) => s + cdNum(l.qty), 0), a = cdLines.reduce((s, l) => s + (l.amt || 0), 0);
+  const koRows = cdLines.map((l, i) => (HAS_KO.test(l.desc) || HAS_KO.test(l.cat)) ? i + 1 : 0).filter(Boolean);
+  $cd("cdTotal").innerHTML = `合计 ${q.toLocaleString("en-US")} EA · ${$cd("cdCur").value} ${cdFmt(a)}` +
+    (koRows.length ? `<br><span style="color:#f87171">第 ${koRows.join("、")} 行仍含韩文，请改成英文</span>` : "");
+}
+$cd("cdLines").addEventListener("input", e => {
+  const inp = e.target.closest("input"), row = e.target.closest(".cd-line"); if (!inp || !row) return;
+  const l = cdLines[+row.dataset.i]; l[inp.dataset.k] = inp.value;
+  cdCalc(l);
+  row.querySelector("[data-amt]").textContent = cdFmt(l.amt);
+  if (l.fixed) row.querySelector('[data-k="price"]').value = l.price;
+  if (inp.dataset.k === "desc" || inp.dataset.k === "cat") inp.classList.toggle("ko", HAS_KO.test(inp.value));
+  cdTotals();
+});
+$cd("cdLines").addEventListener("click", e => {
+  const del = e.target.closest(".del"); if (!del) return;
+  cdLines.splice(+del.closest(".cd-line").dataset.i, 1);
+  if (!cdLines.length) cdLines.push(cdBlank());
+  cdRender();
+});
+$cd("cdAddLine").addEventListener("click", () => { cdLines.push(cdBlank()); cdRender(); });
+$cd("cdCur").addEventListener("change", cdRender);
+
+/* 从 Excel 粘贴：品名 ⇥ 数量 ⇥ 单价 */
+$cd("cdPasteBtn").addEventListener("click", () => {
+  const rows = $cd("cdPasteTxt").value.split(/\r?\n/).map(r => r.split("\t").map(x => x.trim())).filter(r => r.some(Boolean));
+  const add = [];
+  rows.forEach(r => {
+    if (r.length === 1) { add.push({ ...cdBlank(), desc: r[0] }); return; }
+    const nums = r.map(cdNum);
+    const isNum = x => x !== undefined && x !== "" && !isNaN(parseFloat(String(x).replace(/[,₩$¥\s]/g, "")));
+    if (!r[0] || (!isNum(r[1]) && !isNum(r[2]))) return; // 跳过表头 / 空行
+    add.push({ ...cdBlank(), desc: r[0], qty: r[1] ? String(nums[1]) : "", price: r[2] ? String(nums[2]) : "" });
+  });
+  if (!add.length) return;
+  cdLines = cdLines.filter(l => l.desc || l.qty || l.price || l.marks).concat(add);
+  $cd("cdPasteTxt").value = "";
+  cdRender();
+});
+
+/* ---------- 购买明细：韩→英 ---------- */
+const KO_CAT = { "화장품": "Cosmetics", "의류": "Clothing", "옷": "Clothing", "가방": "Bag", "신발": "Shoes", "구두": "Shoes", "시계": "Watch", "향수": "Perfume",
+  "주얼리": "Jewelry", "쥬얼리": "Jewelry", "보석": "Jewelry", "액세서리": "Accessories", "악세서리": "Accessories", "잡화": "Sundries", "지갑": "Wallet", "벨트": "Belt",
+  "스카프": "Scarf", "모자": "Hat", "선글라스": "Sunglasses", "안경": "Glasses", "건강식품": "Health Food", "식품": "Food", "전자제품": "Electronics", "주류": "Liquor", "담배": "Tobacco", "완구": "Toys", "생활용품": "Household Goods" };
+const KO_BRAND = { "샤넬": "CHANEL", "디올": "DIOR", "디올뷰티": "DIOR BEAUTY", "에스티로더": "ESTEE LAUDER", "랑콤": "LANCOME", "설화수": "SULWHASOO", "후": "WHOO", "입생로랑": "YSL",
+  "겔랑": "GUERLAIN", "에르메스": "HERMES", "구찌": "GUCCI", "루이비통": "LOUIS VUITTON", "프라다": "PRADA", "버버리": "BURBERRY", "톰포드": "TOM FORD", "조말론": "JO MALONE",
+  "키엘": "KIEHL'S", "맥": "MAC", "시세이도": "SHISEIDO", "클리니크": "CLINIQUE", "바비브라운": "BOBBI BROWN", "나스": "NARS", "헤라": "HERA", "아이오페": "IOPE", "라네즈": "LANEIGE",
+  "이니스프리": "INNISFREE", "롤렉스": "ROLEX", "까르띠에": "CARTIER", "몽블랑": "MONTBLANC", "나이키": "NIKE", "아디다스": "ADIDAS", "발렌시아가": "BALENCIAGA", "생로랑": "SAINT LAURENT",
+  "셀린느": "CELINE", "보테가베네타": "BOTTEGA VENETA", "펜디": "FENDI", "미우미우": "MIU MIU", "지방시": "GIVENCHY", "아르마니": "ARMANI", "끌로에": "CHLOE", "티파니": "TIFFANY",
+  "불가리": "BVLGARI", "오메가": "OMEGA", "코치": "COACH", "마크제이콥스": "MARC JACOBS", "크리드": "CREED", "딥티크": "DIPTYQUE", "르라보": "LE LABO", "시슬리": "SISLEY", "라메르": "LA MER" };
+const KO_WORD = { "각종": "Various", "향수": "perfumes", "클렌징": "cleansers", "클렌저": "cleansers", "립스틱": "lipsticks", "크림": "creams", "뷰티": "Beauty", "셔도": "shadow", "섀도": "shadow",
+  "아이섀도": "eyeshadow", "파운데이션": "foundation", "쿠션": "cushion", "에센스": "essence", "세럼": "serum", "로션": "lotion", "토너": "toner", "스킨": "skin toner", "마스카라": "mascara",
+  "선크림": "sunscreen", "마스크팩": "mask packs", "마스크": "masks", "핸드크림": "hand cream", "바디": "body", "립밤": "lip balm", "틴트": "lip tint", "파우더": "powder", "블러셔": "blusher",
+  "세트": "set", "기초": "skincare", "색조": "makeup", "화장품": "cosmetics", "앰플": "ampoule", "미스트": "mist", "오일": "oil", "샴푸": "shampoo", "가방": "bags", "지갑": "wallets",
+  "신발": "shoes", "의류": "clothing", "시계": "watches", "벨트": "belts", "스카프": "scarves", "선글라스": "sunglasses", "및": "and", "외": "etc.", "용": "for", "남성": "men's", "여성": "women's" };
+function koTranslate(text) {
+  let t = String(text || "").trim();
+  if (!HAS_KO.test(t)) return t;
+  const out = [];
+  t.split(/\s+/).forEach(tok => {
+    let etc = false;
+    if (tok.length > 1 && /등$/.test(tok)) { tok = tok.slice(0, -1); etc = true; }
+    if (tok === "등") { out.push("etc."); return; }
+    let en = KO_WORD[tok] || (KO_BRAND[tok] ? KO_BRAND[tok].replace(/\b\w+/g, w => w[0] + w.slice(1).toLowerCase()) : null);
+    if (!en) {   // 品牌前缀 + 词，如 디올뷰티
+      const b = Object.keys(KO_BRAND).sort((a, b) => b.length - a.length).find(k => tok.startsWith(k));
+      if (b) { const rest = tok.slice(b.length); en = KO_BRAND[b].replace(/\b\w+/g, w => w[0] + w.slice(1).toLowerCase()) + (rest ? " " + (KO_WORD[rest] || rest) : ""); }
+    }
+    out.push(en || tok);
+    if (etc) out.push("etc.");
+  });
+  return out.join(" ").replace(/\s+etc\.$/, ", etc.").replace(/ (perfumes|cleansers|lipsticks|creams|cushion|serum|lotion|toner)(?= [a-z])/g, " $1,").trim();
+}
+const DETAIL_COLS = ["no", "buyer", "store", "date", "appr", "pay", "origin", "cat", "brand", "name"];
+const DETAIL_HDR = { "NO": "no", "NO.": "no", "번호": "no", "매입담당": "buyer", "가맹점명": "store", "매입일자": "date", "승인번호": "appr", "결제액": "pay", "원산지": "origin", "제품구분": "cat", "상품브랜드": "brand", "브랜드": "brand", "상품명": "name" };
+function parseDetail(txt) {
+  const rows = txt.split(/\r?\n/).map(r => r.split("\t").map(x => x.trim()));
+  let map = null; const out = [];
+  rows.forEach(r => {
+    if (!r.some(Boolean)) return;
+    const hdrHits = r.filter(c => DETAIL_HDR[c.replace(/\s+/g, "")] || DETAIL_HDR[c.toUpperCase()]).length;
+    if (hdrHits >= 3) { map = r.map(c => DETAIL_HDR[c.replace(/\s+/g, "")] || DETAIL_HDR[c.toUpperCase()] || null); return; }
+    const m = map || DETAIL_COLS;
+    const o = {}; m.forEach((k, i) => { if (k && !(k in o)) o[k] = r[i] ?? ""; });
+    const pay = cdNum(o.pay);
+    if (!pay || (!o.appr && !o.name)) return;   // 标题行 / 合计行
+    o.pay = pay; out.push(o);
+  });
+  return out;
+}
+function cdJoinBrand(brand, name) {
+  if (!brand) return name;
+  if (name.toUpperCase().startsWith(brand.toUpperCase() + " ")) return brand + name.slice(brand.length);
+  return [brand, name].filter(Boolean).join(" ");
+}
+$cd("cdDetailBtn").addEventListener("click", () => {
+  const rows = parseDetail($cd("cdDetailTxt").value);
+  if (!rows.length) { cdStatus("cdMkStatus", "没有识别到明细行，请从表格复制整块（含 결제액 列）后粘贴", "err"); return; }
+  cdDetail = rows;
+  cdLines = rows.map(o => {
+    let name = String(o.name || "").trim(), qty = 1;
+    const m = name.match(/\s*[*×xX]\s*(\d+)\s*$/);
+    if (m) { qty = +m[1]; name = name.slice(0, m.index).trim(); }
+    const brand = String(o.brand || "").trim();
+    const brandEn = HAS_KO.test(brand) ? (KO_BRAND[brand] || brand) : brand.toUpperCase();
+    const amt = Math.round(o.pay * 0.945 / 10000) * 10000;
+    return { marks: o.appr || "", cat: KO_CAT[String(o.cat || "").trim()] || String(o.cat || "").trim(), desc: cdJoinBrand(brandEn, koTranslate(name)), qty: String(qty), price: "", amt, fixed: true };
+  });
+  $cd("cdCur").value = "KRW";
+  cdRender();
+  cdStatus("cdMkStatus", `已解析 ${rows.length} 行明细，申报金额合计 KRW ${cdFmt(cdLines.reduce((s, l) => s + l.amt, 0))}`, "ok");
+});
+
+/* ---------- 生成 Excel（ExcelJS，按需加载） ---------- */
+let excelJsP = null;
+function loadExcelJS() {
+  if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+  if (excelJsP) return excelJsP;
+  const urls = ["https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js", "https://unpkg.com/exceljs@4.4.0/dist/exceljs.min.js"];
+  excelJsP = urls.reduce((p, u) => p.catch(() => new Promise((res, rej) => {
+    const s = document.createElement("script"); s.src = u; s.onload = () => window.ExcelJS ? res(window.ExcelJS) : rej(); s.onerror = rej; document.head.appendChild(s);
+  })), Promise.reject()).catch(e => { excelJsP = null; throw new Error("表格组件加载失败，请检查网络后重试"); });
+  return excelJsP;
+}
+function cdCollect() {
+  const v = id => $cd(id).value.trim();
+  return {
+    sh: { name: v("cdShName"), addr: v("cdShAddr"), tel: v("cdShTel"), attn: v("cdShAttn"), tax: v("cdShTax") },
+    co: { name: v("cdCoName"), addr: v("cdCoAddr"), tel: v("cdCoTel"), attn: v("cdCoAttn") },
+    invNo: v("cdInvNo"), date: v("cdDate"), terms: v("cdTerms"), pol: v("cdPol"), dest: v("cdDest"), cur: v("cdCur"),
+    lines: cdLines.filter(l => l.desc || l.cat || cdNum(l.qty)).map(l => ({ ...l, qty: cdNum(l.qty), price: cdNum(l.price) })),
+    detail: cdGoodsMode === "detail" ? cdDetail : [],
+    ct: cdNum(v("cdCt")), nw: cdNum(v("cdNw")), gw: cdNum(v("cdGw")), cbm: cdNum(v("cdCbm")), note: v("cdMkNote")
+  };
+}
+function cdValidate(d, forSend) {
+  if (forSend && !$cd("cdGroup").value.trim()) return "请填写企微群名";
+  if (!d.sh.name) return "请填写发货公司";
+  if (!d.co.name) return "请填写收货公司";
+  if (!d.invNo) return "请填写发票号";
+  if (!d.lines.length) return "请至少填写一行货物明细";
+  const bad = d.lines.findIndex(l => !l.desc && !l.cat || !l.qty);
+  if (bad >= 0) return `第 ${bad + 1} 行货物缺少品名或数量`;
+  return "";
+}
+const cdFileName = d => `CI_PL_${(d.invNo || "draft").replace(/[\\/:*?"<>|\s]+/g, "_")}.xlsx`;
+
+async function buildCiPl(d) {
+  const ExcelJS = await loadExcelJS();
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "YUNDA KOREA"; wb.created = new Date();
+  const T = { style: "thin" };
+  const KO = "맑은 고딕", CN = "SimSun";
+  const numFmt = d.cur === "KRW" ? '#,##0' : '#,##0.00';
+  const date = d.date ? new Date(d.date + "T00:00:00Z") : null;
+  const sum = (arr, k) => arr.reduce((s, x) => s + (+x[k] || 0), 0);
+  const totQty = sum(d.lines, "qty"), totAmt = sum(d.lines, "amt");
+
+  const put = (ws, addr, value, font = {}, align = {}, fmt) => {
+    const c = ws.getCell(addr);
+    c.value = value;
+    c.font = { name: KO, size: 10, ...font };
+    if (Object.keys(align).length) c.alignment = align;
+    if (fmt) c.numFmt = fmt;
+    return c;
+  };
+  const bd = (ws, r, c, side) => { const cell = ws.getCell(r, c); cell.border = { ...(cell.border || {}), [side]: T }; };
+  const box = (ws, r1, c1, r2, c2) => {
+    for (let c = c1; c <= c2; c++) { bd(ws, r1, c, "top"); bd(ws, r2, c, "bottom"); }
+    for (let r = r1; r <= r2; r++) { bd(ws, r, c1, "left"); bd(ws, r, c2, "right"); }
+  };
+  const vline = (ws, r1, r2, c) => { for (let r = r1; r <= r2; r++) bd(ws, r, c, "left"); };
+  const merge = (ws, rng) => { try { ws.mergeCells(rng); } catch (e) {} };
+  const party = (ws, r0, title, p, isShipper) => {
+    put(ws, "A" + r0, title, { bold: true });
+    const rows = [["发货公司", "收货公司"], ["发货公司地址", "收货公司地址"], ["电话", "电话"], ["联系人", "联系人"]];
+    const vals = [p.name, p.addr, p.tel, p.attn];
+    rows.forEach((lab, i) => {
+      const r = r0 + 1 + i;
+      put(ws, "A" + r, lab[isShipper ? 0 : 1], { name: CN, bold: i !== 3 }, { horizontal: "left", vertical: "middle" });
+      merge(ws, `C${r}:D${r}`);
+      put(ws, "C" + r, vals[i] || "", i === 0 ? { bold: true, size: 11 } : { size: 10 }, { horizontal: "left", vertical: "middle", wrapText: i === 1 });
+    });
+    if ((p.addr || "").length > 55) ws.getRow(r0 + 2).height = 30;
+  };
+
+  /* ===== IV-COVER ===== */
+  const iv = wb.addWorksheet("IV-COVER", { pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } }, views: [{ showGridLines: false }] });
+  const hasCat = d.lines.some(l => l.cat);   // 类别单独一列时加宽 D 列（参照购买明细版样例）
+  [10.8, 6, hasCat ? 16 : 40.1, hasCat ? 52 : 22, 32.9, 20.4, 12.2, 5.4, 21.3].forEach((w, i) => iv.getColumn(i + 1).width = w);
+  merge(iv, "A1:I1");
+  put(iv, "A1", "COMMERCIAL INVOICE", { size: 18, bold: true }, { horizontal: "center", vertical: "middle" });
+  iv.getRow(1).height = 26.25;
+  party(iv, 2, " Shipper/Exporter ", d.sh, true);
+  put(iv, "E2", " No. & Date of invoice", { bold: true });
+  merge(iv, "E3:I3"); put(iv, "E3", d.invNo, { bold: true, size: 11 }, { horizontal: "left", vertical: "middle" });
+  merge(iv, "E4:I4"); put(iv, "E4", date || "", {}, { horizontal: "left" }, '"DATE : "dd/mmm/yy');
+  if (d.sh.tax) { merge(iv, "E5:I5"); put(iv, "E5", "TAX ID : " + d.sh.tax, {}, { horizontal: "left" }); }
+  party(iv, 7, " For account & risk of Messrs.", d.co, false);
+  put(iv, "E7", " Remarks", { bold: true });
+  merge(iv, "E8:I8"); put(iv, "E8", d.terms || "", { bold: true }, { horizontal: "left" });
+  if (d.note) { merge(iv, "E9:I11"); put(iv, "E9", d.note, {}, { horizontal: "left", vertical: "top", wrapText: true }); }
+  put(iv, "A12", " Notify party", { bold: true });
+  put(iv, "A16", " Port of Loading", { bold: true }); put(iv, "C16", " Final destination", { bold: true });
+  put(iv, "A17", d.pol || "", { size: 11 }, { horizontal: "left" }); put(iv, "C17", d.dest || "", { size: 11 }, { horizontal: "left" });
+  put(iv, "A18", " Carrier", { bold: true }); put(iv, "C18", "Sailing on or about", { bold: true });
+  merge(iv, "A19:B19"); merge(iv, "C19:D19");
+  [12, 13, 14, 15].forEach(r => iv.getRow(r).height = 17.25);
+  box(iv, 2, 1, 6, 4); box(iv, 2, 5, 6, 9); box(iv, 7, 1, 11, 4); box(iv, 7, 5, 19, 9);
+  box(iv, 12, 1, 15, 4); box(iv, 16, 1, 17, 2); box(iv, 16, 3, 17, 4); box(iv, 18, 1, 19, 2); box(iv, 18, 3, 19, 4);
+  // 表头
+  put(iv, "A20", " Marks ", { bold: true, size: 9 }, { horizontal: "left" });
+  put(iv, "C20", " Description of Goods", { bold: true });
+  put(iv, "E20", "14. Quantity", { bold: true }, { horizontal: "right" });
+  merge(iv, "F20:G20"); put(iv, "F20", "15. Unit Price", { bold: true }, { horizontal: "right" });
+  merge(iv, "H20:I20"); put(iv, "H20", "16. Amount", { bold: true }, { horizontal: "right" });
+  put(iv, "E21", "(EA)", { bold: true }, { horizontal: "right", vertical: "top" });
+  merge(iv, "F21:G21"); put(iv, "F21", `(Unit : ${d.cur})`, { bold: true }, { horizontal: "right", vertical: "top" });
+  merge(iv, "H21:I21"); put(iv, "H21", `(Unit : ${d.cur})`, { bold: true }, { horizontal: "right", vertical: "top" });
+  // 明细
+  const L0 = 22, nRows = Math.max(d.lines.length, 8);
+  for (let i = 0; i < nRows; i++) {
+    const r = L0 + i, l = d.lines[i];
+    iv.getRow(r).height = 19.5;
+    merge(iv, `A${r}:B${r}`); merge(iv, `F${r}:G${r}`); merge(iv, `H${r}:I${r}`);
+    if (!l) continue;
+    put(iv, "A" + r, l.marks || "", {}, { horizontal: "left", vertical: "middle" });
+    if (l.cat) { put(iv, "C" + r, l.cat, { size: 10 }, { vertical: "middle" }); put(iv, "D" + r, l.desc, { size: 10 }, { vertical: "middle" }); }
+    else { merge(iv, `C${r}:D${r}`); put(iv, "C" + r, l.desc, { size: 10 }, { vertical: "middle", wrapText: l.desc.length > 60 }); }
+    put(iv, "E" + r, l.qty, {}, { horizontal: "right", vertical: "middle" }, "#,##0");
+    if (l.fixed) {
+      put(iv, "H" + r, l.amt, {}, { horizontal: "right", vertical: "middle" }, numFmt);
+      put(iv, "F" + r, { formula: `H${r}/E${r}`, result: l.qty ? l.amt / l.qty : 0 }, {}, { horizontal: "right", vertical: "middle" }, d.cur === "KRW" ? '#,##0' : '#,##0.00');
+    } else {
+      put(iv, "F" + r, l.price, {}, { horizontal: "right", vertical: "middle" }, numFmt);
+      put(iv, "H" + r, { formula: `E${r}*F${r}`, result: l.amt }, {}, { horizontal: "right", vertical: "middle" }, numFmt);
+    }
+  }
+  const LT = L0 + nRows;
+  iv.getRow(LT).height = 21;
+  put(iv, "C" + LT, "TOTAL", { bold: true, size: 11 }, { vertical: "middle" });
+  put(iv, "E" + LT, { formula: `SUM(E${L0}:E${LT - 1})`, result: totQty }, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, "#,##0");
+  merge(iv, `H${LT}:I${LT}`);
+  put(iv, "H" + LT, { formula: `SUM(H${L0}:H${LT - 1})`, result: totAmt }, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, numFmt);
+  box(iv, 20, 1, 21, 9);
+  [3, 5, 6, 8].forEach(c => vline(iv, 20, LT, c));
+  box(iv, L0, 1, LT, 9);
+  for (let c = 1; c <= 9; c++) bd(iv, LT, c, "top");
+  const IS = LT + 3;
+  put(iv, "F" + IS, "Signed by", { size: 11 });
+  for (let c = 6; c <= 9; c++) bd(iv, IS + 2, c, "bottom");
+  merge(iv, `F${IS + 3}:I${IS + 3}`); put(iv, "F" + (IS + 3), d.sh.name, { bold: true }, { horizontal: "center" });
+  box(iv, LT + 1, 1, IS + 4, 9);
+  iv.pageSetup.printArea = `A1:I${IS + 4}`;
+
+  /* ===== PK-COVER ===== */
+  const pk = wb.addWorksheet("PK-COVER", { pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 } }, views: [{ showGridLines: false }] });
+  [5.9, 11.9, hasCat ? 16 : 39.6, hasCat ? 54 : 19.1, 13, 14.5, 15.5, 15.5].forEach((w, i) => pk.getColumn(i + 1).width = w);
+  merge(pk, "A1:H1");
+  put(pk, "A1", "PACKING LIST", { size: 18, bold: true }, { horizontal: "center", vertical: "middle" });
+  pk.getRow(1).height = 26.25;
+  party(pk, 2, " Shipper/Exporter ", d.sh, true);
+  put(pk, "E2", " 8. No. & Date of invoice", { bold: true });
+  merge(pk, "E3:H3"); put(pk, "E3", d.invNo, { bold: true, size: 11 }, { horizontal: "left", vertical: "middle" });
+  merge(pk, "E4:H4"); put(pk, "E4", date || "", {}, { horizontal: "left" }, '"DATE : "dd/mmm/yy');
+  if (d.sh.tax) { merge(pk, "E5:H5"); put(pk, "E5", "TAX ID : " + d.sh.tax, {}, { horizontal: "left" }); }
+  party(pk, 7, " For account & risk of Messrs.", d.co, false);
+  put(pk, "E7", " 9. Remarks", { bold: true });
+  merge(pk, "E8:H8"); put(pk, "E8", d.terms || "", { bold: true }, { horizontal: "left" });
+  if (d.note) { merge(pk, "E9:H11"); put(pk, "E9", d.note, {}, { horizontal: "left", vertical: "top", wrapText: true }); }
+  put(pk, "A12", " Notify party", { bold: true });
+  put(pk, "A17", "4. Port of Loading", { bold: true }); put(pk, "C17", "5. Final destination", { bold: true });
+  put(pk, "A18", d.pol || "", { size: 11 }, { horizontal: "left" }); put(pk, "C18", d.dest || "", { size: 11 }, { horizontal: "left" });
+  put(pk, "A19", "6. Carrier", { bold: true }); put(pk, "C19", "7. Sailing on or about", { bold: true });
+  merge(pk, "A20:B20"); merge(pk, "C20:D20");
+  box(pk, 2, 1, 6, 4); box(pk, 2, 5, 6, 8); box(pk, 7, 1, 11, 4); box(pk, 7, 5, 20, 8);
+  box(pk, 12, 1, 16, 4); box(pk, 17, 1, 18, 2); box(pk, 17, 3, 18, 4); box(pk, 19, 1, 20, 2); box(pk, 19, 3, 20, 4);
+  put(pk, "A21", "10. Marks &", { bold: true, size: 9 }, { horizontal: "left" });
+  put(pk, "A22", "     No. of PKGS", { bold: true, size: 9 }, { horizontal: "left" });
+  put(pk, "C21", "11. Description of Goods", { bold: true });
+  put(pk, "E21", "12. Quantity", { bold: true }, { horizontal: "right" });
+  put(pk, "F21", "13. Net-weight", { bold: true }, { horizontal: "right" });
+  put(pk, "G21", "14.Gross-weight", { bold: true }, { horizontal: "right" });
+  put(pk, "H21", "15.Measurement", { bold: true }, { horizontal: "right" });
+  put(pk, "E22", "(EA)", { bold: true }, { horizontal: "right", vertical: "top" });
+  put(pk, "F22", "(KGS)", { bold: true }, { horizontal: "right", vertical: "top" });
+  put(pk, "G22", "(KGS)", { bold: true }, { horizontal: "right", vertical: "top" });
+  put(pk, "H22", "(CBM)", { bold: true }, { horizontal: "right", vertical: "top" });
+  const P0 = 23, single = d.lines.length === 1;
+  const kgFmt = n => (Number.isInteger(n) ? '#,##0' : '#,##0.00') + '"KGS"';
+  for (let i = 0; i < nRows; i++) {
+    const r = P0 + i, l = d.lines[i];
+    pk.getRow(r).height = 19.5;
+    merge(pk, `A${r}:B${r}`);
+    if (!l) continue;
+    put(pk, "A" + r, l.marks || "", {}, { horizontal: "left", vertical: "middle" });
+    if (l.cat) { put(pk, "C" + r, l.cat, {}, { vertical: "middle" }); put(pk, "D" + r, l.desc, {}, { vertical: "middle" }); }
+    else { merge(pk, `C${r}:D${r}`); put(pk, "C" + r, l.desc, {}, { vertical: "middle", wrapText: l.desc.length > 60 }); }
+    put(pk, "E" + r, l.qty, {}, { horizontal: "right", vertical: "middle" }, "#,##0");
+    if (single) {
+      if (d.nw) put(pk, "F" + r, d.nw, {}, { horizontal: "right", vertical: "middle" }, kgFmt(d.nw));
+      if (d.gw) put(pk, "G" + r, d.gw, {}, { horizontal: "right", vertical: "middle" }, kgFmt(d.gw));
+      if (d.cbm) put(pk, "H" + r, d.cbm, {}, { horizontal: "right", vertical: "middle" }, "0.000");
+    }
+  }
+  const PT = P0 + nRows;
+  pk.getRow(PT).height = 21;
+  put(pk, "C" + PT, "TOTAL", { bold: true, size: 11 }, { vertical: "middle" });
+  put(pk, "E" + PT, d.ct ? `${d.ct}CT` : { formula: `SUM(E${P0}:E${PT - 1})`, result: totQty }, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, d.ct ? undefined : "#,##0");
+  if (d.nw) put(pk, "F" + PT, d.nw, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, kgFmt(d.nw));
+  if (d.gw) put(pk, "G" + PT, d.gw, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, kgFmt(d.gw));
+  if (d.cbm) put(pk, "H" + PT, d.cbm, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, "0.000");
+  box(pk, 21, 1, 22, 8);
+  [3, 5, 6, 7, 8].forEach(c => vline(pk, 21, PT, c));
+  box(pk, P0, 1, PT, 8);
+  for (let c = 1; c <= 8; c++) bd(pk, PT, c, "top");
+  const PS = PT + 3;
+  put(pk, "E" + PS, "Signed by", { size: 11 });
+  for (let c = 5; c <= 8; c++) bd(pk, PS + 2, c, "bottom");
+  merge(pk, `E${PS + 3}:H${PS + 3}`); put(pk, "E" + (PS + 3), d.sh.name, { bold: true }, { horizontal: "center" });
+  box(pk, PT + 1, 1, PS + 4, 8);
+  pk.pageSetup.printArea = `A1:H${PS + 4}`;
+
+  /* ===== Sheet1 购买明细 ===== */
+  if (d.detail && d.detail.length) {
+    const sh = wb.addWorksheet("Sheet1");
+    const DT = "돋움";
+    [8.89, 17.22, 20, 11.67, 14.44, 12.56, 7.67, 12.33, 14.56, 37.33, 12.56, 17.56, 17.56].forEach((w, i) => sh.getColumn(i + 1).width = w);
+    const n = d.detail.length, last = 2 + n;
+    sh.mergeCells("A1:E1");
+    const f1 = { name: DT, size: 11 };
+    const c1 = sh.getCell("A1"); c1.value = `직수출 수출면장 신고일자:${d.date || ""}`; c1.font = f1;
+    const tot = k => d.detail.reduce((s, o) => s + (+o[k] || 0), 0);
+    const payT = tot("pay"), declT = d.detail.reduce((s, o) => s + Math.round(o.pay * 0.945 / 10000) * 10000, 0);
+    [["F", payT], ["K", payT], ["L", payT / 11 * 10], ["M", declT]].forEach(([col, v]) => {
+      const c = sh.getCell(col + "1"); c.value = { formula: `SUM(${col}3:${col}${last})`, result: v }; c.font = f1; c.numFmt = "#,##0_ ";
+    });
+    const hdr = ["NO.", "매입담당", "가맹점명", "매입일자", "승인번호", "결제액", "원산지", "제품구분", "상품브랜드", "상품명", "단가", "공급가액\n(VAT제외)", "수출신고액(94.5%)"];
+    hdr.forEach((h, i) => { const c = sh.getCell(2, i + 1); c.value = h; c.font = { name: DT, size: 14, bold: true }; c.alignment = { wrapText: i >= 11, horizontal: i === 3 ? "center" : i === 4 ? "right" : undefined }; });
+    sh.getRow(2).height = 36;
+    d.detail.forEach((o, i) => {
+      const r = 3 + i, row = sh.getRow(r);
+      const dm = String(o.date || "").match(/(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+      const vals = [cdNum(o.no) || i + 1, o.buyer || "", o.store || "", dm ? new Date(Date.UTC(+dm[1], +dm[2] - 1, +dm[3])) : (o.date || ""), o.appr || "", o.pay, o.origin || "", o.cat || "", o.brand || "", o.name || "",
+        { formula: `F${r}`, result: o.pay }, { formula: `K${r}/11*10`, result: o.pay / 11 * 10 }, { formula: `ROUND(K${r}*94.5%,-4)`, result: Math.round(o.pay * 0.945 / 10000) * 10000 }];
+      vals.forEach((v, j) => {
+        const c = row.getCell(j + 1); c.value = v; c.font = { name: DT, size: 11 };
+        if (j === 3) { c.numFmt = "yyyy/m/d;@"; c.alignment = { horizontal: "center" }; }
+        if (j === 4) c.alignment = { horizontal: "right" };
+        if (j === 5 || j >= 10) c.numFmt = "#,##0_ ";
+      });
+    });
+  }
+  return wb.xlsx.writeBuffer();
+}
+
+function cdKoConfirm(d) {
+  const ko = d.lines.map((l, i) => (HAS_KO.test(l.desc) || HAS_KO.test(l.cat)) ? i + 1 : 0).filter(Boolean);
+  return !ko.length || confirm(`第 ${ko.join("、")} 行品名仍含韩文，报关单需英文品名。\n确定仍要继续吗？`);
+}
+let cdLastUrl = null;
+function cdBlobUrl(buf) {
+  if (cdLastUrl) URL.revokeObjectURL(cdLastUrl);
+  cdLastUrl = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  return cdLastUrl;
+}
+function cdSave(buf, name) {
+  const a = document.createElement("a"); a.href = cdBlobUrl(buf); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+$cd("cdDownload").addEventListener("click", async () => {
+  const d = cdCollect(), err = cdValidate(d, false);
+  if (err) return cdStatus("cdMkStatus", err, "err");
+  if (!cdKoConfirm(d)) return;
+  try { const buf = await buildCiPl(d); cdSave(buf, cdFileName(d)); cdStatus("cdMkStatus", `已生成 ${cdFileName(d)} ✓`, "ok"); }
+  catch (e) { cdStatus("cdMkStatus", e.message || "生成失败", "err"); }
+});
+$cd("cdMkSend").addEventListener("click", async () => {
+  const d = cdCollect(), err = cdValidate(d, true), btn = $cd("cdMkSend");
+  if (err) return cdStatus("cdMkStatus", err, "err");
+  if (!cdKoConfirm(d)) return;
+  btn.disabled = true; cdStatus("cdMkStatus", "生成并发送中…");
+  try {
+    const buf = await buildCiPl(d), name = cdFileName(d);
+    if (buf.byteLength > CD_MAX) throw new Error("文件超过 20MB");
+    const fd = new FormData();
+    fd.append("file", new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), name);
+    fd.append("filename", name); fd.append("group", $cd("cdGroup").value.trim());
+    fd.append("kind", d.detail.length ? "表格制作（CI + PL + 购买明细）" : "表格制作（CI + PL）");
+    fd.append("invoice", d.invNo); fd.append("dest", cdDestText());
+    const totQ = d.lines.reduce((s, l) => s + l.qty, 0), totA = d.lines.reduce((s, l) => s + l.amt, 0);
+    fd.append("summary", `${d.sh.name} → ${d.co.name} · ${d.lines.length} 项 / ${totQ} EA / ${d.cur} ${cdFmt(totA)}` +
+      (d.ct ? ` · ${d.ct}CT` : "") + (d.gw ? ` · GW ${d.gw}kg` : "") + (d.cbm ? ` · ${d.cbm} CBM` : ""));
+    fd.append("note", d.note); fd.append("hp", $cd("bkHp").value);
+    await cdPost(fd);
+    cdStatus("cdMkStatus", `已发送到企微群 ✓ <a href="${cdBlobUrl(buf)}" download="${cdEsc(name)}">下载副本 ${cdEsc(name)}</a>`, "ok");
+  } catch (e) { cdStatus("cdMkStatus", (e.message || "发送失败") + "，请稍后再试", "err"); }
+  btn.disabled = false;
+});
+
+cdLines = [cdBlank()];
+cdRender();
