@@ -1162,7 +1162,7 @@ async function buildCiPl(d) {
   const PT = P0 + nRows;
   pk.getRow(PT).height = 21;
   put(pk, "C" + PT, "TOTAL", { bold: true, size: 11 }, { vertical: "middle" });
-  put(pk, "E" + PT, d.ct ? `${d.ct}CT` : { formula: `SUM(E${P0}:E${PT - 1})`, result: totQty }, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, d.ct ? undefined : "#,##0");
+  put(pk, "E" + PT, d.ct ? `${d.ct} CTN` : { formula: `SUM(E${P0}:E${PT - 1})`, result: totQty }, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, d.ct ? undefined : "#,##0");
   if (d.nw) put(pk, "F" + PT, d.nw, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, kgFmt(d.nw));
   if (d.gw) put(pk, "G" + PT, d.gw, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, kgFmt(d.gw));
   if (d.cbm) put(pk, "H" + PT, d.cbm, { bold: true, size: 11 }, { horizontal: "right", vertical: "middle" }, "0.000");
